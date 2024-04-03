@@ -3,7 +3,7 @@ name: Python CI/CD Pipeline
 on:
   push:
     branches:
-      - master # develop 或者是正式上版的分支
+      - env-CICD_Setup # develop 或者是正式上版的分支
 
 jobs:
   # test:
