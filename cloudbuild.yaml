@@ -5,7 +5,7 @@ steps:
         "build",
         "-t",
         "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID",
-        "../../Django_framework",
+        "./Django_framework",
       ]
   - name: "gcr.io/cloud-builders/gcloud"
     args:
