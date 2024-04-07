@@ -23,4 +23,4 @@ jobs:
 
       - name: Trigger Cloud Build
         run: |
-          gcloud builds submit --config cloudbuild.yaml .
+          gcloud builds submit --config ../cloudbuild.yaml .
