@@ -15,7 +15,7 @@ steps:
       - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
 
   - name: "gcr.io/cloud-builders/gcloud"
-    args:us
+    args:
       - "compute"
       - "instances"
       - "update-container"
