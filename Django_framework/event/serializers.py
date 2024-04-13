@@ -13,16 +13,6 @@ class GetEventSerializer(serializers.ModelSerializer):
             'score': {'required': False}  # Set required to False to allow null values
         }
 
-class CreateEventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = ['creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score']
-        extra_kwargs = {
-            'create_datetime': {'required': False},  # Set required to False to allow null values
-            'update_datetime': {'required': False},  # Set required to False to allow null values
-            'dalete_datetime': {'required': False},  # Set required to False to allow null values
-            'score': {'required': False}  # Set required to False to allow null values
-        }
 
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
