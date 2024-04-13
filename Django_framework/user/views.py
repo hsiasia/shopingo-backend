@@ -65,9 +65,11 @@ class GetUserByID(generics.ListAPIView):
     def get(self, request, *args, **krgs):
         user_id = request.query_params.get('user_id')
         if user_id: 
-            data = User.objects.filter(id=user_id)
+            data = User.objects.filter(id=user_id).\
+                values(
+                    'id', 'name', 'gmail', 'profile_pic', 'score')
             resp = {
-                'data': data,
+                'data': list(data),
                 'error': None,
                 'status': status.HTTP_200_OK, 
             }
