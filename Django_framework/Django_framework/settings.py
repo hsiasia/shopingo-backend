@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'event',
     'user',
     'googleAPIs',
+    'drf_yasg'
 ]
 
 MIDDLEWARE = [
