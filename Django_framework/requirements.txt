@@ -7,3 +7,5 @@ packaging==24.0
 python-dotenv==1.0.1
 sqlparse==0.4.4
 typing_extensions==4.10.0
+drf_yasg
+dj_static
