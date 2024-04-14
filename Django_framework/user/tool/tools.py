@@ -45,7 +45,7 @@ def jwt_required(f):
                'error' : 'Authorization token is missing',
                'status' : status.HTTP_401_UNAUTHORIZED
             }            
-            return JsonResponse(resp)
+            return JsonResponse(resp,status=status.HTTP_401_UNAUTHORIZED)
         
         try:
             if token.startswith('Bearer '):
@@ -57,13 +57,13 @@ def jwt_required(f):
                'error' : 'Token has expired',
                'status' : status.HTTP_401_UNAUTHORIZED
             }
-            return JsonResponse(resp)
+            return JsonResponse(resp,status=status.HTTP_401_UNAUTHORIZED)
         except jwt.InvalidTokenError:
             resp = {
                'error' : 'Invalid token',
                'status' : status.HTTP_401_UNAUTHORIZED
             }
-            return JsonResponse(resp)
+            return JsonResponse(resp,status=status.HTTP_401_UNAUTHORIZED)
         
         return f(self, request, *args, **kwargs)
     return decorated_function
