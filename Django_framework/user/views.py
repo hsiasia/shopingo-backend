@@ -9,7 +9,7 @@ from .serializers import UserSerializer
 from drf_yasg import openapi
 from rest_framework import status
 from django.http import JsonResponse
-from user.tool.tools import verify_token
+from user.tool.tools import verify_token,jwt_required
 
 
 # ver 2.1
@@ -29,6 +29,8 @@ class GetUserByID(generics.ListAPIView):
             )
         ]
     )
+
+    @jwt_required
     def get(self, request, *args, **krgs):
         user_id = request.query_params.get('user_id')
         if user_id: 
