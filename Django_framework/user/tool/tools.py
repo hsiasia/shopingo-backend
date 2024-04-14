@@ -38,7 +38,7 @@ def verify_token(token):
 
 def jwt_required(f):
     @wraps(f)
-    def decorated_function(request, *args, **kwargs):
+    def decorated_function(self, request, *args, **kwargs):
         token = request.headers.get('Authorization')
         if not token:
             resp = {
@@ -65,5 +65,5 @@ def jwt_required(f):
             }
             return JsonResponse(resp)
         
-        return f(request, *args, **kwargs)
+        return f(self, request, *args, **kwargs)
     return decorated_function
