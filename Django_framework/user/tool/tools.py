@@ -1,8 +1,11 @@
 from google.oauth2 import id_token
 from google.auth.transport import requests
+from django.http import JsonResponse
+from functools import wraps
 import jwt
 import datetime
 import os
+from rest_framework import status
 
 def verify_token(token):
     try:
@@ -32,3 +35,35 @@ def verify_token(token):
         raise
 
 
+
+def jwt_required(f):
+    @wraps(f)
+    def decorated_function(request, *args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token:
+            resp = {
+               'error' : 'Authorization token is missing',
+               'status' : status.HTTP_401_UNAUTHORIZED
+            }            
+            return JsonResponse(resp)
+        
+        try:
+            if token.startswith('Bearer '):
+                token = token[7:]
+            decoded = jwt.decode(token, os.getenv('JWT_SECRET'), algorithms=['HS256'])
+            request.user_info = decoded  
+        except jwt.ExpiredSignatureError:
+            resp = {
+               'error' : 'Token has expired',
+               'status' : status.HTTP_401_UNAUTHORIZED
+            }
+            return JsonResponse(resp)
+        except jwt.InvalidTokenError:
+            resp = {
+               'error' : 'Invalid token',
+               'status' : status.HTTP_401_UNAUTHORIZED
+            }
+            return JsonResponse(resp)
+        
+        return f(request, *args, **kwargs)
+    return decorated_function
