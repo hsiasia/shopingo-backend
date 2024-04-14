@@ -1,7 +1,7 @@
 from django.urls import path
-from event.views import HandleEvent
-from event.views import HandleEventInfo
+from event.views import  HandleGetAllAndCreateEvent
+from event.views import HandleCreateParticipant
 urlpatterns = [
-    path('api/event/', HandleEvent.as_view(), name='HandleEvent-api'),
-    path('api/eventInfo/', HandleEventInfo.as_view(), name='HandleEventInfo-api')
+    path('api/event/',  HandleGetAllAndCreateEvent.as_view(), name='HandleEvent-api'),
+    path('api/eventInfo/', HandleCreateParticipant.as_view(), name='HandleCreateParticipant-api')
 ]
