@@ -18,31 +18,64 @@ from django.utils import timezone
 import datetime
 
 
-class HandleEvent(generics.CreateAPIView):
+class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
     queryset = Event.objects.all()
     serializer_class = GetEventSerializer
     def get(self, request, *args, **krgs):
         event_id = request.query_params.get('event_id')
+        user_id = request.query_params.get('user_id')
         if event_id: 
             data = Event.objects.filter(id=event_id).\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score')
-            resp = {
-                'data': list(data),
-                'error': None,
-                'status': status.HTTP_200_OK, 
-            }
+            if data:
+                resp = {
+                    'data': list(data),
+                    'error': None,
+                    'status': status.HTTP_200_OK, 
+                }
+            else:
+                resp = {
+                    'data': list(data),
+                    'error': "data with specified event_ID not found",
+                    'status': status.HTTP_404_NOT_FOUND, 
+                }
+            return JsonResponse(resp)
+        elif user_id: 
+            data = Event.objects.filter(id=user_id).\
+                values(
+                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score')
+            if data:
+                resp = {
+                    'data': list(data),
+                    'error': None,
+                    'status': status.HTTP_200_OK, 
+                }
+            else:
+                resp = {
+                    'data': list(data),
+                    'error': "data with specified user_ID not found",
+                    'status': status.HTTP_404_NOT_FOUND, 
+                }
             return JsonResponse(resp)
         
         else: 
             data = Event.objects.\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score')
-            resp = {
-                'data': list(data),
-                'error': None,
-                'status': status.HTTP_200_OK, 
-            }
+            if data:
+                resp = {
+                    'data': list(data),
+                    'error': None,
+                    'status': status.HTTP_200_OK, 
+                }
+            else:
+                resp = {
+                    'data': list(data),
+                    'error': "data with specified user_ID not found",
+                    'status': status.HTTP_404_NOT_FOUND, 
+                }
+
             return JsonResponse(resp)
     def perform_create(self, serializer):
         # Set event_date to the current date and time
@@ -51,15 +84,23 @@ class HandleEvent(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        print(request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
-            print(serializer.data)
             headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            response_data = {
+                'data': serializer.data
+            }
+            response = JsonResponse(response_data, status=status.HTTP_201_CREATED)
+            for header, value in headers.items():
+                response[header] = value
+            return response
+        else:
+            response_data = {
+                'errors': serializer.errors
+            }
+            return JsonResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-class HandleEventInfo(generics.CreateAPIView):
+class HandleCreateParticipant(generics.CreateAPIView):
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
     def get(self, request, *args, **krgs):
@@ -92,15 +133,23 @@ class HandleEventInfo(generics.CreateAPIView):
                 'status': status.HTTP_400_BAD_REQUEST, 
             }
             return JsonResponse(resp)
-
+            
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        print(request.data)
         if serializer.is_valid():
             self.perform_create(serializer)
-            print(serializer.data)
             headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            response_data = {
+                'data': serializer.data
+            }
+            response = JsonResponse(response_data, status=status.HTTP_201_CREATED)
+            for header, value in headers.items():
+                response[header] = value
+            return response
+        else:
+            response_data = {
+                'errors': serializer.errors
+            }
+            return JsonResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
 
    
