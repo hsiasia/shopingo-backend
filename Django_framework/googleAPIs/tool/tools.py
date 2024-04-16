@@ -18,15 +18,15 @@ def generate_download_signed_urls(blob_names):
         modified_blob_name = f"{unique_suffix}-{blob_name}"
 
         blob = bucket.blob(modified_blob_name)
-
+        blob_url = f"https://storage.googleapis.com/{os.getenv('BUCKET_NAME')}/{modified_blob_name}"
         # Generate signed URL 
-        url = blob.generate_signed_url(
+        signed_url = blob.generate_signed_url(
             version="v4",
             expiration=datetime.timedelta(minutes=5),  # URL valid for 5 minutes
             method="GET"
         )
 
-        urls.append((modified_blob_name, url))
+        urls.append((signed_url, blob_url))
 
     return urls
 
