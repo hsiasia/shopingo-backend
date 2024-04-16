@@ -12,9 +12,9 @@ class GenerateSignedUrlsAPIView(generics.ListAPIView):
         blob_names = request.data.get('blob_names')
 
         try:
-            signed_urls = generate_download_signed_urls(blob_names)
+            urls = generate_download_signed_urls(blob_names)
             resp = {
-                'data': signed_urls,
+                'data': urls,
                 'error' : None,
                 'status': status.HTTP_200_OK
             }
