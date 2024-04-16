@@ -3,10 +3,7 @@ import uuid
 import datetime
 from google.cloud import storage
 
-def generate_download_signed_urls(blob_names, num_images):
-    if len(blob_names) != num_images:
-        raise ValueError("The number of blob names must match the number of images specified")
-
+def generate_download_signed_urls(blob_names):
     # Create an authenticated storage client 
     key_path = os.path.join(os.path.dirname(__file__), 'auth.json')
     storage_client = storage.Client.from_service_account_json(key_path)
