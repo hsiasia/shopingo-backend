@@ -10,7 +10,7 @@ class Event(models.Model):
     hashtag = models.JSONField()
     location = models.CharField(max_length=32)
     event_date = models.DateTimeField()
-    scale = models.CharField(max_length=32)
+    scale = models.IntegerField()
     budget = models.IntegerField()
     detail = models.TextField()
     create_datetime = models.DateTimeField()
