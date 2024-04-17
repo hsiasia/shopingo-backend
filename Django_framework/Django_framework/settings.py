@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-)4yu1^_)1r0y+sqca@_v40x+^x*vp+)c8*028q$e5(h5&)e#_i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['34.81.121.53','localhost','shopinggo.info']
+ALLOWED_HOSTS = ['34.81.121.53','localhost','shopingo.info']
 
 
 # Application definition
@@ -62,7 +62,7 @@ MIDDLEWARE = [
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',  
-    'https://shopinggo.info'
+    'https://shopingo.info'
 ]
 
 ROOT_URLCONF = 'Django_framework.urls'
