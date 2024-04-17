@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-)4yu1^_)1r0y+sqca@_v40x+^x*vp+)c8*028q$e5(h5&)e#_i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['34.81.121.53','127.0.0.1']
+ALLOWED_HOSTS = ['34.81.121.53','localhost','shopingo.info']
 
 
 # Application definition
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'event',
     'user',
     'googleAPIs',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -56,6 +58,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',  
+    'https://shopingo.info'
 ]
 
 ROOT_URLCONF = 'Django_framework.urls'
