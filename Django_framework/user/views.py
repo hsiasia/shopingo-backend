@@ -30,13 +30,13 @@ class GetUserByID(generics.ListAPIView):
         ]
     )
 
-    @jwt_required
+    # @jwt_required
     def get(self, request, *args, **krgs):
         user_id = request.query_params.get('user_id')
         if user_id: 
             data = User.objects.filter(id=user_id).\
                 values(
-                    'id', 'name', 'gmail', 'profile_pic', 'score')
+                    'id', 'name', 'gmail', 'profile_pic', 'score','score_amounts')
             resp = {
                 'data': list(data),
                 'error': None,
@@ -64,66 +64,10 @@ class CreateUserAccount(generics.GenericAPIView):
             }
         ),
         responses={
-            201: openapi.Response(
-                description="User created successfully",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'jwt_token': openapi.Schema(type=openapi.TYPE_STRING, description="JWT token provided upon successful authentication"),
-                        'user_info': openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            properties={
-                                'id': openapi.Schema(type=openapi.TYPE_STRING, description="User ID"),
-                                'name': openapi.Schema(type=openapi.TYPE_STRING, description="User name"),
-                                'gmail': openapi.Schema(type=openapi.TYPE_STRING, description="User Gmail"),
-                                'profile_pic': openapi.Schema(type=openapi.TYPE_STRING, description="URL of the user's profile picture"),
-                                'score': openapi.Schema(type=openapi.TYPE_INTEGER, description="User score, default 5")
-                            }
-                        ),
-                        'status': openapi.Schema(type=openapi.TYPE_INTEGER, description="HTTP status code")
-                    }
-                )
-            ),
-            200: openapi.Response(
-                description="User retrieved successfully",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'jwt_token': openapi.Schema(type=openapi.TYPE_STRING, description="JWT token"),
-                        'user_info': openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            properties={
-                                'id': openapi.Schema(type=openapi.TYPE_STRING),
-                                'name': openapi.Schema(type=openapi.TYPE_STRING),
-                                'gmail': openapi.Schema(type=openapi.TYPE_STRING),
-                                'profile_pic': openapi.Schema(type=openapi.TYPE_STRING),
-                                'score': openapi.Schema(type=openapi.TYPE_INTEGER)
-                            }
-                        ),
-                        'status': openapi.Schema(type=openapi.TYPE_INTEGER)
-                    }
-                )
-            ),
-            400: openapi.Response(
-                description="Bad request due to missing or invalid token",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING, description="Error message explaining the reason for the failure"),
-                        'status': openapi.Schema(type=openapi.TYPE_INTEGER)
-                    }
-                )
-            ),
-            401: openapi.Response(
-                description="Unauthorized access due to invalid token",
-                schema=openapi.Schema(
-                    type=openapi.TYPE_OBJECT,
-                    properties={
-                        'error': openapi.Schema(type=openapi.TYPE_STRING),
-                        'status': openapi.Schema(type=openapi.TYPE_INTEGER)
-                    }
-                )
-            )
+            201: "User created successfully",
+            200: "User retrieved successfully",
+            400: "Bad request due to missing or invalid token",
+            401: "Unauthorized access due to invalid token"
         }
     )
     def post(self, request, *args, **kwargs):
@@ -167,3 +111,58 @@ class CreateUserAccount(generics.GenericAPIView):
                 'status': status.HTTP_401_UNAUTHORIZED,              
             }
             return JsonResponse(resp,status=status.HTTP_401_UNAUTHORIZED)
+
+
+class UpdateUserScore(generics.GenericAPIView):
+    serializer_class = UserSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Update User Score",
+        operation_description="Updates a user's score based on the provided user ID and new score.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'user_id': openapi.Schema(type=openapi.TYPE_STRING, description="User ID"),
+                'score': openapi.Schema(type=openapi.TYPE_INTEGER, description="New score to add")
+            }
+        ),
+        responses={
+            200: openapi.Response(description="Score updated successfully"),
+            400: openapi.Response(description="Bad request due to missing user_id or score"),
+            404: openapi.Response(description="User not found")
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        user_id = request.data.get('user_id')
+        new_score = request.data.get('score')
+
+        if not user_id or new_score is None:
+            resp = {
+                'error': 'Missing user_id or score', 
+                'status': status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            resp = {
+                'error': 'User not found', 
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp, status=status.HTTP_404_NOT_FOUND)
+
+        if user.score_amounts == 0:
+            user.score = new_score
+        else:
+            user.score = round((user.score * user.score_amounts + new_score) / (user.score_amounts + 1), 1)
+            user.score_amounts += 1
+            print(user.score)
+            user.save()
+
+            resp = {
+                'data': 'score updated',
+                'error': None, 
+                'status': status.HTTP_200_OK
+            }
+            return JsonResponse(resp, status=status.HTTP_200_OK)
