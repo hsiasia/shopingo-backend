@@ -25,7 +25,12 @@ class GenerateSignedUrlsAPIView(generics.CreateAPIView):
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'data': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_STRING), description='Generated signed URLs'),
+                    'data': openapi.Schema(
+                        type=openapi.TYPE_ARRAY, 
+                        items=openapi.Items(type=openapi.TYPE_ARRAY, items=openapi.Items(
+                            type=openapi.TYPE_STRING)),
+                        description='Each inner array contains two strings: the generated signed URL and the GCS static image URL.'
+                    ),
                     'error': openapi.Schema(type=openapi.TYPE_STRING, description='Error status (null if no error)'),
                     'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='HTTP status code')
                 }
