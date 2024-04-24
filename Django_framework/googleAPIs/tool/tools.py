@@ -23,7 +23,7 @@ def generate_download_signed_urls(blob_names):
         signed_url = blob.generate_signed_url(
             version="v4",
             expiration=datetime.timedelta(minutes=5),  # URL valid for 5 minutes
-            method="GET"
+            method="PUT"
         )
 
         urls.append((signed_url, blob_url))
