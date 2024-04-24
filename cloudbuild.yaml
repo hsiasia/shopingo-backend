@@ -2,23 +2,43 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
+  # Step to get the current timestamp
+  - name: "gcr.io/cloud-builders/gcloud"
+    id: "get-timestamp"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        echo "TIMESTAMP=$TIMESTAMP" >> $ENV_FILE
+        echo "Built image with tag $TIMESTAMP"
+
+  # Build step
   - name: "gcr.io/cloud-builders/docker"
+    id: "build"
     args:
       - "build"
       - "-t"
-      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
+      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$TIMESTAMP"
       - "./Django_framework"
+    waitFor: ["get-timestamp"]
 
+  # Push step
   - name: "gcr.io/cloud-builders/docker"
+    id: "push"
     args:
       - "push"
-      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
+      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$TIMESTAMP"
+    waitFor: ["build"]
 
+  # Update container instance step
   - name: "gcr.io/cloud-builders/gcloud"
+    id: "update-container"
     args:
       - "compute"
       - "instances"
       - "update-container"
       - "shopinggo-backend"
-      - "--container-image=asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
+      - "--container-image=asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$TIMESTAMP"
       - "--zone=asia-east1-b"
+    waitFor: ["push"]
