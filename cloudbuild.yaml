@@ -8,6 +8,7 @@ steps:
       - "ssh"
       - "instance-20240425-125736"
       - "--zone=asia-east1-b"
+      - "--ssh-key=/home/see8982689826/.ssh/id_rsa"
       - "--command=cd shopingo-backend/ && \
         git pull && \
         source Django_framework/myenv/bin/activate && \
