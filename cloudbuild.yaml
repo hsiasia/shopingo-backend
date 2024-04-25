@@ -2,23 +2,16 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      - "build"
-      - "-t"
-      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image/latest"
-      - "./Django_framework"
-
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      - "push"
-      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image/latest"
-
   - name: "gcr.io/cloud-builders/gcloud"
     args:
       - "compute"
-      - "instances"
-      - "update-container"
-      - "shopinggo-backend"
-      - "--container-image=asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image/latest"
+      - "ssh"
+      - "instance-20240425-125736"
       - "--zone=asia-east1-b"
+      - "--command=cd shopingo-backend/ && \
+        git pull && \
+        source Django_framework/myenv/bin/activate && \
+        pip install --no-cache-dir -r Django_framework/requirements.txt && \
+        pkill gunicorn && \
+        cd Django_framework/ && \
+        gunicorn Django_framework.wsgi:application --bind 0.0.0.0:8000 --daemon"
