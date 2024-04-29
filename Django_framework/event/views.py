@@ -173,6 +173,20 @@ class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
 class HandleCreateParticipant(generics.CreateAPIView):
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
+    @swagger_auto_schema(
+        operation_summary='Get Event Info',
+        operation_description="""
+        Get all event info: http://34.81.121.53/:8000/api/event
+        Get event info by event ID:http://34.81.121.53/:8000/api/event/?event_id=1""",
+        manual_parameters=[
+            openapi.Parameter(
+                name='event_id',
+                in_=openapi.IN_QUERY,
+                description='EVENT ID',
+                type=openapi.TYPE_INTEGER
+            )
+        ]
+    )
     def get(self, request, *args, **krgs):
         event_id = request.query_params.get('event_id')
         user_id = request.query_params.get('user_id')
@@ -204,6 +218,19 @@ class HandleCreateParticipant(generics.CreateAPIView):
             }
             return JsonResponse(resp)
             
+    @swagger_auto_schema(
+        operation_summary='Join Event',
+        operation_description='POST http://34.81.121.53/:8000/api/eventInfo/',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'event_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'user_id': openapi.Schema(type=openapi.TYPE_STRING)
+                # Add other properties of your Event model here
+            },
+            required=['event', 'user']  # Adjust as per your serializer requirements
+        )
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
