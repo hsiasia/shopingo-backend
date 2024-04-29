@@ -94,7 +94,29 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
         # Set event_date to the current date and time
         serializer.save(create_datetime=timezone.now())
         serializer.save(update_datetime=timezone.now())
-
+    @swagger_auto_schema(
+        operation_summary='Create Event',
+        operation_description='Create a new event',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'creator': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'event_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
+                'hashtag': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
+                'location': openapi.Schema(type=openapi.TYPE_STRING),
+                'event_date': openapi.Schema(type=openapi.FORMAT_DATETIME),
+                'scale': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'budget': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'detail': openapi.Schema(type=openapi.TYPE_STRING),
+                'create_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
+                'update_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
+                'delete_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME, nullable=True),
+                'score': openapi.Schema(type=openapi.TYPE_INTEGER),
+            },
+            required=['creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'score']  # Adjust as per your serializer requirements
+        )
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
