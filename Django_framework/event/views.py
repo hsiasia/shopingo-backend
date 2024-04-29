@@ -268,6 +268,18 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 'status': status.HTTP_404_NOT_FOUND, 
             }
             return JsonResponse(resp)
+    @swagger_auto_schema(
+        operation_summary='Delete Event',
+        operation_description='Delete an event by ID',
+        manual_parameters=[
+            openapi.Parameter(
+                name='event_id',
+                in_=openapi.IN_QUERY,
+                description='Event ID to delete',
+                type=openapi.TYPE_INTEGER
+            )
+        ]
+    )
     def delete(self, request, *args, **kwargs):
         # Extract event_id from URL path
         event_id = request.query_params.get('event_id')
