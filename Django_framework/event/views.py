@@ -21,9 +21,24 @@ import datetime
 class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
     queryset = Event.objects.all()
     serializer_class = GetEventSerializer
+    @swagger_auto_schema(
+        operation_summary='Get Event Info',
+        operation_description="""
+        Get all event info: http://34.81.121.53/:8000/api/event
+        Get event info by event ID:http://34.81.121.53/:8000/api/event/?event_id=1""",
+        manual_parameters=[
+            openapi.Parameter(
+                name='event_id',
+                in_=openapi.IN_QUERY,
+                description='EVENT ID',
+                type=openapi.TYPE_INTEGER
+            )
+        ]
+    )
     def get(self, request, *args, **krgs):
         event_id = request.query_params.get('event_id')
         user_id = request.query_params.get('user_id')
+        
         if event_id: 
             data = Event.objects.filter(id=event_id).\
                 values(
@@ -41,6 +56,7 @@ class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
                     'status': status.HTTP_404_NOT_FOUND, 
                 }
             return JsonResponse(resp)
+        
         elif user_id: 
             data = Event.objects.filter(id=user_id).\
                 values(
@@ -100,6 +116,39 @@ class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
             }
             return JsonResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request, *args, **kwargs):
+        # Extract event_id from URL path
+        event_id = request.query_params.get('event_id')
+        if event_id:
+            # Retrieve the event object from the database
+            try:
+            # Retrieve the event object from the database
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist:
+                # Return 404 response if event with specified ID doesn't exist
+                resp = {
+                    'error': "Event with specified ID not found",
+                    'status': status.HTTP_404_NOT_FOUND,
+                }
+                return JsonResponse(resp, status=status.HTTP_404_NOT_FOUND)
+            # Serialize the updated data
+            serializer = self.get_serializer(event, data=request.data)
+
+            # Validate the serializer
+            if serializer.is_valid():
+                # Save the updated data
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            resp = {
+                'data': list(data),
+                'error': "data with specified eventID not found",
+                'status': status.HTTP_404_NOT_FOUND, 
+            }
+            return JsonResponse(resp)
+
 class HandleCreateParticipant(generics.CreateAPIView):
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
@@ -129,7 +178,7 @@ class HandleCreateParticipant(generics.CreateAPIView):
         else: 
             resp = {
                 'data': None,
-                'error': "No userId provided",
+                'error': "No eventId provided",
                 'status': status.HTTP_400_BAD_REQUEST, 
             }
             return JsonResponse(resp)
