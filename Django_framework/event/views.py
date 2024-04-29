@@ -148,6 +148,27 @@ class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 'status': status.HTTP_404_NOT_FOUND, 
             }
             return JsonResponse(resp)
+    def delete(self, request, *args, **kwargs):
+        # Extract event_id from URL path
+        event_id = request.query_params.get('event_id')
+        
+        if event_id:
+            try:
+                # Retrieve the event object from the database
+                event = Event.objects.get(id=event_id)
+                # Delete the event
+                event.delete()
+                return Response({'message': 'Event deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+            except Event.DoesNotExist:
+                # Return 404 response if event with specified ID doesn't exist
+                return Response({'error': "Event with specified ID not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            resp = {
+                'data': list(data),
+                'error': "data with specified eventID not found",
+                'status': status.HTTP_404_NOT_FOUND, 
+            }
+            return JsonResponse(resp) 
 
 class HandleCreateParticipant(generics.CreateAPIView):
     queryset = Participant.objects.all()
