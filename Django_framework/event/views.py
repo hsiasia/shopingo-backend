@@ -18,7 +18,7 @@ from django.utils import timezone
 import datetime
 
 
-class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
+class HandleGetAllAndCreateEvent(generics.CreateAPIView):
     queryset = Event.objects.all()
     serializer_class = GetEventSerializer
     def get(self, request, *args, **krgs):
@@ -32,32 +32,30 @@ class  HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 resp = {
                     'data': list(data),
                     'error': None,
-                    'status': status.HTTP_200_OK, 
                 }
+                return JsonResponse(resp, status = status.HTTP_200_OK)
             else:
                 resp = {
                     'data': list(data),
                     'error': "data with specified event_ID not found",
-                    'status': status.HTTP_404_NOT_FOUND, 
                 }
-            return JsonResponse(resp)
+                return JsonResponse(resp, status = status.HTTP_404_NOT_FOUND)
         elif user_id: 
-            data = Event.objects.filter(id=user_id).\
+            data = Event.objects.filter(creator=user_id).\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score')
             if data:
                 resp = {
                     'data': list(data),
                     'error': None,
-                    'status': status.HTTP_200_OK, 
                 }
+                return JsonResponse(resp, status = status.HTTP_200_OK)
             else:
                 resp = {
                     'data': list(data),
                     'error': "data with specified user_ID not found",
-                    'status': status.HTTP_404_NOT_FOUND, 
                 }
-            return JsonResponse(resp)
+                return JsonResponse(resp, status = status.HTTP_404_NOT_FOUND)
         
         else: 
             data = Event.objects.\
