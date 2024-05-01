@@ -27,9 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-)4yu1^_)1r0y+sqca@_v40x+^x*vp+)c8*028q$e5(h5&)e#_i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['34.81.121.53', '127.0.0.1', 'localhost', 'shopingo.info']
+ALLOWED_HOSTS = ['35.201.139.198','localhost','shopingo.info']
 
 
 # Application definition
@@ -48,6 +48,10 @@ INSTALLED_APPS = [
     'googleAPIs',
     'drf_yasg'
 ]
+
+SWAGGER_SETTINGS = {
+   'USE_SESSION_AUTH': False
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
