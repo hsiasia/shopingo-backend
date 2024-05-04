@@ -8,6 +8,7 @@ class User(models.Model):
     profile_pic = models.URLField(max_length=256, null=False)
     score = models.FloatField(default=5, null=False)
     score_amounts = models.IntegerField(default=1, null=False)
+    location = models.CharField(max_length=32, null=False)
 
     def __str__(self):
         return self.name
