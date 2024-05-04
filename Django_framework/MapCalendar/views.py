@@ -7,6 +7,14 @@ import googlemaps
 from django.http import JsonResponse
 from rest_framework import status
 import json
+import os
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+
 
 
 #
@@ -156,10 +164,136 @@ class GetDistance(APIView):
 #
 # google Calendar
 #
-# 1. createCalenderEvent
-# 2. updateCalenderEvent
-# 3. deleteCalenderEvent
+# 1. createCalendar
+# 2. createCalenderEvent
+# 3. updateCalenderEvent
+# 4. deleteCalenderEvent
 #
 
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
+
+#user被創建時就要建立了！
+class createCalendar(APIView):
+    def post(self, request):
+        try:
+            userid = request.POST.get('user_id')
+            user = User.objects.get(pk=userid)
+
+        except:
+            resp = {
+                'error': "data with specified user_ID not found",
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+
+        # 1. 取得token令牌以獲得資源、使用credentials等OAuth認證資訊已使用api
+        creds = None
+        if user.token:
+            creds = Credentials.from_authorized_user_file(user.token, SCOPES)
+
+        # 2. generate credential.json
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "credentials.json", SCOPES
+                )
+                creds = flow.run_local_server(port=8000)  #port correct?
+                    
+            # Save the token for the next run
+            user.token = creds.to_json()
+            
+        #3. get calendar
+        service = build("calendar", "v3", credentials=creds)
 
 
+
+
+
+        calendar = {
+            'summary': 'ShopinggoEvents',  #日曆名稱
+            'timeZone': 'Asia/Taipei' 
+        }
+        new_calendar = service.calendars().insert(body=calendar).execute()
+        user.calendarId = new_calendar.id
+
+    
+
+
+class createCalenderEvent(APIView):
+    def post(self, request):
+        try:
+            userid = request.POST.get('user_id')
+            user = User.objects.get(pk=userid)
+            eventid = request.POST.get('event_id')
+            event = Event.objects.get(pk=eventid)
+            calendarid = user.calendarId
+        except:
+            resp = {
+                'error': "data with specified event_ID or user_ID not found",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+            
+        try:
+            #-------------------------------------------------------------------------
+            # 1. 取得token令牌以獲得資源、使用credentials等OAuth認證資訊已使用api
+            creds = None
+            if user.token:
+                creds = Credentials.from_authorized_user_file(user.token, SCOPES)
+
+            # 2. generate credential.json
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        "credentials.json", SCOPES
+                    )
+                    creds = flow.run_local_server(port=8000)  #port correct?
+                    
+                # Save the token for the next run
+                user.token = creds.to_json()
+            
+            #3. get calendar
+            service = build("calendar", "v3", credentials=creds)
+            eventInfo = {
+                'id':event.id,
+                'summary': event.event_name,    ##??title of event
+                'location': event.location
+                #....others
+            }
+            try:
+                event = service.events().insert(calendarId=user.calendarId, body=eventInfo).execute()
+                resp = {
+                    'error':None,
+                    'status':status.HTTP_200_OK
+                }
+                return JsonResponse(resp)
+            except:
+                resp = {
+                    'error': "create duplicate event (id)",
+                    'status': status.HTTP_400_BAD_REQUEST
+                }
+                return JsonResponse(resp)
+            
+            
+        except:
+            resp = {
+                'error': "access googel api failed",
+                'status': status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp)
+
+
+
+
+class UpdateCalenderEvent(APIView):
+    def put(self, request):
+        pass
+
+
+class DeleteCalenderEvent(APIView):
+    def delete(slef, request):
+        pass
