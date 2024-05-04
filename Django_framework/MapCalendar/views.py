@@ -6,13 +6,17 @@ from event.models import Event
 import googlemaps
 from django.http import JsonResponse
 from rest_framework import status
+import json
+
 
 #
 # google MAP
 #
 #1. SaveEventLocation
-#2. 
-
+#2. GetEventLocation
+#3. UpdateEventLoaction
+#4. GetDistance
+#
 
 
 #SaveEventLoaction
@@ -20,9 +24,9 @@ class SaveEventLocation(APIView):
     def post(self, request):
         try:
             eventid = request.POST.get('event_id')
-            EventLocation = request.POST.get('event_Location')['location']
+            EventLocation = request.POST.get('event_Location').geometry.location
             event = Event.objects.get(pk=eventid)
-            event.EventLocation = EventLocation
+            event.location = EventLocation
 
             resp = {
                 'error':None,
@@ -66,7 +70,7 @@ class UpdateEventLoaction(APIView):
     def put(self, request):
         try:
             eventid = request.PUT.get('event_id')
-            newLocation = request.PUT.get('location')['location']
+            newLocation = request.PUT.get('location').geometry.location
             event = Event.objects.get(pk=eventid)
             event.location = newLocation
             #update需要return什麼
@@ -83,11 +87,17 @@ class GetDistance(APIView):
     
         #googlemap client
         gmaps = googlemaps.Client(key='AIzaSyBnEyRCRUhtHZCDvmMrGZn04PEjPjPlf2E')
+
         #user
         try:
-            UserLocation = request.GET.get('user_id').location
-            #UserLocation = gmaps.geolocate(home_mobile_country_code=466)['location']
-
+            data = request.GET.get('user_location')
+            json_data = json.loads(data)
+            lat = json_data['latitude']
+            lon = json_data['longitude']
+            UserLocation = {
+                "latitude": lat,
+                "longitude": lon
+            }
         except:
             resp = {
                 'data':None,
@@ -146,7 +156,6 @@ class GetDistance(APIView):
 #
 # google Calendar
 #
-# [APIs]
 # 1. createCalenderEvent
 # 2. updateCalenderEvent
 # 3. deleteCalenderEvent
