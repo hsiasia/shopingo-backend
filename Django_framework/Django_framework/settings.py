@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'event',
     'user',
     'googleAPIs',
-    'drf_yasg'
+    'MapCalendar',
+    'drf_yasg',
 ]
 
 SWAGGER_SETTINGS = {
