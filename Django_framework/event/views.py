@@ -42,7 +42,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
         if event_id: 
             data = Event.objects.filter(id=event_id).\
                 values(
-                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score')
+                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             if data:
                 resp = {
                     'data': list(data),
@@ -54,16 +54,11 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                     'data': list(data),
                     'error': "data with specified event_ID not found",
                 }
-<<<<<<< HEAD
                 return JsonResponse(resp, status = status.HTTP_404_NOT_FOUND)
-=======
-            return JsonResponse(resp)
-        
->>>>>>> dac7665 (finished update event)
         elif user_id: 
             data = Event.objects.filter(creator=user_id).\
                 values(
-                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score')
+                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             if data:
                 resp = {
                     'data': list(data),
@@ -80,7 +75,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
         else: 
             data = Event.objects.\
                 values(
-                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score')
+                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             if data:
                 resp = {
                     'data': list(data),
@@ -116,10 +111,9 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 'detail': openapi.Schema(type=openapi.TYPE_STRING),
                 'create_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
                 'update_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
-                'delete_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME, nullable=True),
-                'score': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'delete_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME, nullable=True), 
             },
-            required=['creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'score']  # Adjust as per your serializer requirements
+            required=['creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime']  # Adjust as per your serializer requirements
         )
     )
     def post(self, request, *args, **kwargs):
@@ -165,9 +159,8 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 'create_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
                 'update_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
                 'delete_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME, nullable=True),
-                'score': openapi.Schema(type=openapi.TYPE_INTEGER),
             },
-            required=['id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score']  # Adjust as per your serializer requirements
+            required=['id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime']  # Adjust as per your serializer requirements
         )
     )
     def put(self, request, *args, **kwargs):
