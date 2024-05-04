@@ -5,20 +5,37 @@ from user.models import User
 from event.models import Event
 import googlemaps
 from django.http import JsonResponse
+from rest_framework import status
 
-#SaveEventLoaction   -->
+#
+# google MAP
+#
+#1. SaveEventLocation
+#2. 
+
+
+
+#SaveEventLoaction
 class SaveEventLocation(APIView):
     def post(self, request):
         try:
             eventid = request.POST.get('event_id')
-            EventLocation = request.POST.get('event_Location')
+            EventLocation = request.POST.get('event_Location')['location']
             event = Event.objects.get(pk=eventid)
-            #event.update('EventLocation'=EventLocation)
             event.EventLocation = EventLocation
+
+            resp = {
+                'error':None,
+                'status':status.HTTP_201_CREATED
+            }
+            return JsonResponse(resp)
+
         except:
-            pass
-            #...
-            #return ...
+            resp = {
+                'error':"data with specified event_ID not found",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
 
 
 #GetEventLocation
@@ -27,22 +44,31 @@ class GetEventLocation(APIView):
         try:
             eventid = request.GET.get('event_id')
             event = Event.objects.get(pk=eventid)
-            EventLocation = event['Location']
-            return JsonResponse(EventLocation)
+            EventLocation = event.location
+            resp = {
+                'data':EventLocation,
+                'error':None,
+                'status':status.HTTP_200_OK
+            }
+            return JsonResponse(resp)
             
         except:
-            ...
-            return...
+            resp = {
+                'data':None,
+                'error':"data with specified event_ID not found",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
         
-
+#TODO: 
 #UpdateEventLoaction
 class UpdateEventLoaction(APIView):
     def put(self, request):
         try:
             eventid = request.PUT.get('event_id')
-            newLocation = request.PUT.get('location')
+            newLocation = request.PUT.get('location')['location']
             event = Event.objects.get(pk=eventid)
-            event['Location'] = newLocation
+            event.location = newLocation
             #update需要return什麼
         except:
             pass
@@ -56,31 +82,35 @@ class GetDistance(APIView):
     def get(self, request):
     
         #googlemap client
-        gmaps = googlemaps.Client(key='______MY_KEY______')
+        gmaps = googlemaps.Client(key='AIzaSyBnEyRCRUhtHZCDvmMrGZn04PEjPjPlf2E')
         #user
         try:
-            userid = request.GET.get('user_id')
-            user = User.objects.get(pk=userid)
-            UserLocation = gmaps.geolocate(home_mobile_country_code=466)  #TODO
-            
-            #user.update('UserLocation'=UserLocation)
-            user.UserLocation = UserLocation
+            UserLocation = request.GET.get('user_id').location
+            #UserLocation = gmaps.geolocate(home_mobile_country_code=466)['location']
+
         except:
-            pass
-            #return ...
+            resp = {
+                'data':None,
+                'error': "data with specified user_ID not found",
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
         
         #event
         try:
             eventid = request.GET.get('event_id')
             event = Event.objects.get(pk=eventid)
-            EventLocation = event['Location']
+            EventLocation = event.location
         except:
-            pass
-            #return ...
+            resp = {
+                'data':None,
+                'error': "data with specified event_ID not found",
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
             
         #distance
         #mode= ["driving", "walking", "bicycling", "transit"]
-        
         walk_data = gmaps.directions(UserLocation, EventLocation,mode='walking')
         w_dist = walk_data[0]['legs'][0]['distance']['text']
         w_time = walk_data[0]['legs'][0]['duration']['text']
@@ -89,17 +119,38 @@ class GetDistance(APIView):
         d_dist = drive_data[0]['legs'][0]['distance']['text']
         d_time = drive_data[0]['legs'][0]['duration']['text']
         
-        resp = {
-            "walk": {
-                "w_dist": w_dist,
-                "w_time": w_time
-            },
-            "drive": {
-                "d_dist": d_dist,
-                "d_time": d_time
+        try:
+            data = {
+                "walk": {
+                    "w_dist": w_dist,
+                    "w_time": w_time
+                },
+                "drive": {
+                    "d_dist": d_dist,
+                    "d_time": d_time
+                }}
+            resp = {
+                'data':data,
+                'error':None,
+                'status':status.HTTP_200_OK, 
             }
-        }
-        return JsonResponse(resp) #
-}
+            return JsonResponse(resp)
+        except:
+            resp = {
+                'data':None,
+                'error': "gmaps calcuation error",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+
+#
+# google Calendar
+#
+# [APIs]
+# 1. createCalenderEvent
+# 2. updateCalenderEvent
+# 3. deleteCalenderEvent
+#
+
 
 
