@@ -54,7 +54,12 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                     'data': list(data),
                     'error': "data with specified event_ID not found",
                 }
+<<<<<<< HEAD
                 return JsonResponse(resp, status = status.HTTP_404_NOT_FOUND)
+=======
+            return JsonResponse(resp)
+        
+>>>>>>> dac7665 (finished update event)
         elif user_id: 
             data = Event.objects.filter(creator=user_id).\
                 values(
@@ -165,6 +170,72 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             required=['id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score']  # Adjust as per your serializer requirements
         )
     )
+    def put(self, request, *args, **kwargs):
+        # Extract event_id from URL path
+        event_id = request.query_params.get('event_id')
+        if event_id:
+            # Retrieve the event object from the database
+            try:
+            # Retrieve the event object from the database
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist:
+                # Return 404 response if event with specified ID doesn't exist
+                resp = {
+                    'error': "Event with specified ID not found",
+                    'status': status.HTTP_404_NOT_FOUND,
+                }
+                return JsonResponse(resp, status=status.HTTP_404_NOT_FOUND)
+            # Serialize the updated data
+            serializer = self.get_serializer(event, data=request.data)
+
+            # Validate the serializer
+            if serializer.is_valid():
+                # Save the updated data
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            resp = {
+                'data': list(data),
+                'error': "data with specified eventID not found",
+                'status': status.HTTP_404_NOT_FOUND, 
+            }
+            return JsonResponse(resp)
+    @swagger_auto_schema(
+        operation_summary='Delete Event',
+        operation_description='Delete an event by ID',
+        manual_parameters=[
+            openapi.Parameter(
+                name='event_id',
+                in_=openapi.IN_QUERY,
+                description='Event ID to delete',
+                type=openapi.TYPE_INTEGER
+            )
+        ]
+    )
+    def delete(self, request, *args, **kwargs):
+        # Extract event_id from URL path
+        event_id = request.query_params.get('event_id')
+        
+        if event_id:
+            try:
+                # Retrieve the event object from the database
+                event = Event.objects.get(id=event_id)
+                # Delete the event
+                event.delete()
+                return Response({'message': 'Event deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+            except Event.DoesNotExist:
+                # Return 404 response if event with specified ID doesn't exist
+                return Response({'error': "Event with specified ID not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            resp = {
+                'data': list(data),
+                'error': "data with specified eventID not found",
+                'status': status.HTTP_404_NOT_FOUND, 
+            }
+            return JsonResponse(resp) 
+
     def put(self, request, *args, **kwargs):
         # Extract event_id from URL path
         event_id = request.query_params.get('event_id')
