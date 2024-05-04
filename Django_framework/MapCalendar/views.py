@@ -289,11 +289,11 @@ class createCalenderEvent(APIView):
 
 
 
-class UpdateCalenderEvent(APIView):
+class updateCalendarEvent(APIView):
     def put(self, request):
         pass
 
 
-class DeleteCalenderEvent(APIView):
+class deleteCalendarEvent(APIView):
     def delete(slef, request):
         pass
