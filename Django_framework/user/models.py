@@ -11,3 +11,7 @@ class User(models.Model):
 
     def __str__(self):
         return self.name
+
+class Follower(models.Model):
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE,  null=False)
+    following_id = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
