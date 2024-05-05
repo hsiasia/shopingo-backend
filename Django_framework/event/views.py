@@ -17,6 +17,9 @@ from django.http import JsonResponse
 from django.utils import timezone
 import datetime
 
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 class HandleGetAllAndCreateEvent(generics.CreateAPIView):
     queryset = Event.objects.all()
@@ -187,6 +190,17 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             if serializer.is_valid():
                 # Save the updated data
                 serializer.save()
+                """
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    "event_updates",  # Channel name
+                    {
+                        "type": "event.updated",
+                        "message": "Event has been updated",
+                        "event_id": event_id
+                    }
+                )
+                """
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -254,7 +268,7 @@ class HandleCreateParticipant(generics.CreateAPIView):
         if event_id: 
             data = Participant.objects.filter(event_id=event_id).\
                 values(
-                    'event', 'user')
+                    'event', 'user','score')
             resp = {
                 'data': list(data),
                 'error': None,

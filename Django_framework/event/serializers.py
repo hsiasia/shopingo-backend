@@ -17,4 +17,4 @@ class GetEventSerializer(serializers.ModelSerializer):
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
-        fields = ['event', 'user']
+        fields = ['event', 'user','score']
