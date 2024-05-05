@@ -383,7 +383,7 @@ class HandleGetEventsByStatus(generics.GenericAPIView):
             openapi.Parameter(
                 'user_id', openapi.IN_QUERY, description='user id', type=openapi.TYPE_INTEGER),
             openapi.Parameter(
-                'status', openapi.IN_QUERY, description='must be "ongoing" or "expired" or "all"', type=openapi.TYPE_STRING)
+                'status', openapi.IN_QUERY, description='must be "creator", "ongoing" or "expired" or "all"', type=openapi.TYPE_STRING)
         ]
     )
     def get(self, request, *args, **kwargs):
@@ -393,8 +393,8 @@ class HandleGetEventsByStatus(generics.GenericAPIView):
         if not user_id or not event_status:
             return JsonResponse({'error': 'missing status or user_id'},status=status.HTTP_400_BAD_REQUEST)
 
-        if event_status not in ['ongoing', 'expired', 'all']:
-            return JsonResponse({'error': 'status must be ongoing or expired or all'}, status=status.HTTP_400_BAD_REQUEST)
+        if event_status not in ['creator', 'ongoing', 'expired', 'all']:
+            return JsonResponse({'error': 'status must be creator , ongoing , expired or all'}, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now().replace(tzinfo=None)
 
@@ -402,8 +402,13 @@ class HandleGetEventsByStatus(generics.GenericAPIView):
 
         if event_status == 'ongoing':
             events = Event.objects.filter(id__in=event_ids, event_date__gte=now)
+
         elif event_status == "expired":
             events = Event.objects.filter(id__in=event_ids, event_date__lt=now)
+
+        elif event_status == "creator":
+            events = Event.objects.filter(creator_id=user_id)
+
         else:
             events = Event.objects.filter(id__in=event_ids)
 
