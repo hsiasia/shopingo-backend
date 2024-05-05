@@ -19,7 +19,6 @@ steps:
       - "compute"
       - "instances"
       - "update-container"
-      - "shopinggo-backend"
+      - "test"
       - "--container-image=asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
       - "--zone=asia-east1-b"
-
