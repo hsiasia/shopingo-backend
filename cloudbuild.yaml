@@ -9,7 +9,7 @@ steps:
       - "--project=${PROJECT_ID}"
       - "--zone=asia-east1-b"
       - "instance-20240425-125736"
-      - "--ssh-key-file=/home/see8982689826/.ssh/gcp"
+      - "--ssh-key-file=/home/see8982689826/.ssh/cloudbuild_gce_key"
       - "--"
       - "bash"
       - "-c"
