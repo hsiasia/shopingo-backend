@@ -2,6 +2,7 @@ from django.db import models
 from user.models import User  
 
 class Event(models.Model):
+
     id = models.AutoField(primary_key=True, null=False)
     creator = models.ForeignKey(User, null=False, on_delete=models.CASCADE)
     event_name = models.CharField(max_length=32, null=False)
@@ -15,6 +16,8 @@ class Event(models.Model):
     create_datetime = models.DateTimeField(null=False, auto_now_add=True)
     update_datetime = models.DateTimeField(null=False, auto_now=True)
     delete_datetime = models.DateTimeField(null=True)
+    score = models.IntegerField(null=True)
+
 
     def __str__(self):
         return self.event_name
@@ -23,3 +26,6 @@ class Participant(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     score = models.IntegerField(null=True)
+
+
+  
