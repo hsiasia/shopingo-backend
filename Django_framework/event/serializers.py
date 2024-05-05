@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from .models import Event
-from .models import Participant
+from .models import Event, Participant, Image
+
 
 class GetEventSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,3 +17,9 @@ class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
         fields = ['event', 'user']
+
+
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ['event', 'url']
