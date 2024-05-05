@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 # Create your views here.
 from rest_framework import generics
+
 from drf_yasg.utils import swagger_auto_schema
 
 from .models import Event
@@ -15,7 +16,7 @@ from rest_framework.response import Response
 from django.http import JsonResponse
 
 from django.utils import timezone
-import datetime
+
 
 
 class HandleGetAllAndCreateEvent(generics.CreateAPIView):
@@ -190,7 +191,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             resp = {
-                'data': list(data),
+                'data': None,
                 'error': "data with specified eventID not found",
                 'status': status.HTTP_404_NOT_FOUND, 
             }
@@ -223,7 +224,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 return Response({'error': "Event with specified ID not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             resp = {
-                'data': list(data),
+                'data': None,
                 'error': "data with specified eventID not found",
                 'status': status.HTTP_404_NOT_FOUND, 
             }
@@ -256,7 +257,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             resp = {
-                'data': list(data),
+                'data': None,
                 'error': "data with specified eventID not found",
                 'status': status.HTTP_404_NOT_FOUND, 
             }
@@ -289,7 +290,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 return Response({'error': "Event with specified ID not found"}, status=status.HTTP_404_NOT_FOUND)
         else:
             resp = {
-                'data': list(data),
+                'data': None,
                 'error': "data with specified eventID not found",
                 'status': status.HTTP_404_NOT_FOUND, 
             }
@@ -375,3 +376,45 @@ class HandleCreateParticipant(generics.CreateAPIView):
             return JsonResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
 
    
+class HandleGetEventsByStatus(generics.GenericAPIView):
+    serializer_class = GetEventSerializer
+    @swagger_auto_schema(
+        operation_summary="get user event by status",
+        operation_description='',
+        manual_parameters=[
+            openapi.Parameter(
+                'user_id', openapi.IN_QUERY, description='user id', type=openapi.TYPE_INTEGER),
+            openapi.Parameter(
+                'status', openapi.IN_QUERY, description='must be "ongoing" or "expired" or "all"', type=openapi.TYPE_STRING)
+        ]
+    )
+    def get(self, request, *args, **kwargs):
+        user_id = request.query_params.get('user_id')
+        event_status = request.query_params.get('status')
+
+        if not user_id or not event_status:
+            return JsonResponse({'error': 'missing status or user_id'},status=status.HTTP_400_BAD_REQUEST)
+
+        if event_status not in ['ongoing', 'expired', 'all']:
+            return JsonResponse({'error': 'status must be ongoing or expired or all'}, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now().replace(tzinfo=None)
+
+        event_ids = Participant.objects.filter(user_id=user_id).values_list('event_id', flat=True)
+
+        if event_status == 'ongoing':
+            events = Event.objects.filter(id__in=event_ids, event_date__gte=now)
+        elif event_status == "expired":
+            events = Event.objects.filter(id__in=event_ids, event_date__lt=now)
+        else:
+            events = Event.objects.filter(id__in=event_ids)
+
+        serialized_events = GetEventSerializer(events, many=True).data
+
+        resp = {
+                'data': serialized_events,
+                'error': None,
+                'status': status.HTTP_200_OK
+        }
+
+        return JsonResponse(resp,status= status.HTTP_200_OK)
