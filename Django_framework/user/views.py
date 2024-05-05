@@ -167,3 +167,57 @@ class CreateUserAccount(generics.GenericAPIView):
                 'status': status.HTTP_401_UNAUTHORIZED,              
             }
             return JsonResponse(resp,status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+class UpdateUserScore(generics.GenericAPIView):
+    serializer_class = UserSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Update User Score",
+        operation_description="Updates a user's score based on the provided user ID and new score.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'user_id': openapi.Schema(type=openapi.TYPE_STRING, description="User ID"),
+                'score': openapi.Schema(type=openapi.TYPE_INTEGER, description="New score to add")
+            }
+        ),
+        responses={
+            200: openapi.Response(description="Score updated successfully"),
+            400: openapi.Response(description="Bad request due to missing user_id or score"),
+            404: openapi.Response(description="User not found")
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        user_id = request.data.get('user_id')
+        score = request.data.get('score')
+
+        if not user_id or score is None:
+            resp = {
+                'error': 'Missing user_id or score', 
+                'status': status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
+        
+        new_score = float(score)
+
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            resp = {
+                'error': 'User not found', 
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp, status=status.HTTP_404_NOT_FOUND)
+
+        user.score = round((user.score * user.score_amounts + new_score) / (user.score_amounts + 1), 1)
+        user.score_amounts += 1
+        user.save()
+
+        resp = {
+            'data': 'score updated',
+            'error': None, 
+            'status': status.HTTP_200_OK
+        }
+        return JsonResponse(resp, status=status.HTTP_200_OK)
