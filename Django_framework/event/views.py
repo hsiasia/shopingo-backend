@@ -25,8 +25,8 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
     @swagger_auto_schema(
         operation_summary='Get Event Info',
         operation_description="""
-        Get all event info: http://34.81.121.53/:8000/api/event
-        Get event info by event ID:http://34.81.121.53/:8000/api/event/?event_id=1""",
+        Get all event info: https://shopingo.info/api/event
+        Get event info by event ID:https://shopingo.info/api/event/?event_id=1""",
         manual_parameters=[
             openapi.Parameter(
                 name='event_id',
@@ -301,9 +301,7 @@ class HandleCreateParticipant(generics.CreateAPIView):
     serializer_class = ParticipantSerializer
     @swagger_auto_schema(
         operation_summary='Get Event Info',
-        operation_description="""
-        Get all event info: http://34.81.121.53/:8000/api/event
-        Get event info by event ID:http://34.81.121.53/:8000/api/event/?event_id=1""",
+        operation_description="",
         manual_parameters=[
             openapi.Parameter(
                 name='event_id',
@@ -346,7 +344,7 @@ class HandleCreateParticipant(generics.CreateAPIView):
             
     @swagger_auto_schema(
         operation_summary='Join Event',
-        operation_description='POST http://34.81.121.53/:8000/api/eventInfo/',
+        operation_description='',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
