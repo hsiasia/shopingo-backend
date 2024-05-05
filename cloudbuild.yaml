@@ -5,7 +5,19 @@ steps:
   - name: "gcr.io/cloud-builders/gcloud"
     args:
       - "compute"
-      - "instances"
-      - "reset"
-      - "instance-20240425-125736"
+      - "ssh"
+      - "--project=${PROJECT_ID}"
       - "--zone=asia-east1-b"
+      - "instance-20240425-125736"
+      - "--ssh-key-file=/home/see8982689826/.ssh/cloudbuild_gce_key"
+      - "--"
+      - "bash"
+      - "-c"
+      - |
+        cd /home/see8982689826/tt/shopingo-backend/ &&
+        git pull &&
+        source Django_framework/venv/bin/activate &&
+        pip install --no-cache-dir -r Django_framework/requirements.txt &&
+        sudo pkill gunicorn &&
+        cd Django_framework/ &&
+        gunicorn Django_framework.wsgi:application --bind 0.0.0.0:8000 --daemon
