@@ -19,6 +19,7 @@ def generate_download_signed_urls(blob_names):
 
         blob = bucket.blob(modified_blob_name)
         blob_url = f"https://storage.googleapis.com/{os.getenv('BUCKET_NAME')}/{modified_blob_name}"
+        blob.content_type = 'image/jpeg'
         blob.content_disposition = 'inline'
         # Generate signed URL 
         signed_url = blob.generate_signed_url(
