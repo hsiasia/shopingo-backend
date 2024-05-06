@@ -32,9 +32,9 @@ class SaveEventLocation(APIView):  #還是要改成put?
     def post(self, request):
         try:
             eventid = request.POST.get('event_id')
-            EventLocation = request.POST.get('event_Location').geometry.location
+            EventLocation = request.POST.get('coords')
             event = Event.objects.get(pk=eventid)
-            event.location = EventLocation #要處理json嗎？
+            event.coordinate = EventLocation #要處理json嗎？
 
             resp = {
                 'error':None,
@@ -56,7 +56,7 @@ class GetEventLocation(APIView):
         try:
             eventid = request.GET.get('event_id')
             event = Event.objects.get(pk=eventid)
-            EventLocation = event.location
+            EventLocation = event.coordinate
             resp = {
                 'data':EventLocation,
                 'error':None,
@@ -78,9 +78,9 @@ class UpdateEventLoaction(APIView):
     def put(self, request):
         try:
             eventid = request.PUT.get('event_id')
-            newLocation = request.PUT.get('location').geometry.location
+            newLocation = request.PUT.get('location')
             event = Event.objects.get(pk=eventid)
-            event.location = newLocation
+            event.coordinate = newLocation
             #update需要return什麼
         except:
             pass
@@ -98,14 +98,14 @@ class GetDistance(APIView):
 
         #user
         try:
-            data = request.GET.get('user_location')
-            json_data = json.loads(data)
-            lat = json_data['coords']['latitude']
-            lon = json_data['coords']['longitude']
-            UserLocation = {
-                "latitude": lat,
-                "longitude": lon
-            }
+            UserLocation = request.GET.get('user_location')
+            # json_data = json.loads(data)
+            # lat = json_data['coords']['latitude']
+            # lon = json_data['coords']['longitude']
+            # UserLocation = {
+            #     "latitude": lat,
+            #     "longitude": lon
+            # }
         except:
             resp = {
                 'data':None,
@@ -118,7 +118,7 @@ class GetDistance(APIView):
         try:
             eventid = request.GET.get('event_id')
             event = Event.objects.get(pk=eventid)
-            EventLocation = event.location
+            EventLocation = event.coordinate
         except:
             resp = {
                 'data':None,
