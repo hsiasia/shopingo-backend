@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from django.db import transaction
 # Create your views here.
 from rest_framework import generics
 
@@ -442,37 +442,32 @@ class UpdateEventImage(generics.GenericAPIView):
                     description='List of new image URLs to be added'
                 )
             },
-            required=['event_id', 'old_urls', 'new_urls']  # Adjust as per your requirements
+            required=['event_id', 'old_urls', 'new_urls'] 
         )
     )
     def post(self, request, *args, **kwargs):
         event_id = request.data.get('event_id')
-        old_urls = request.data.get('old_urls')
-        new_urls = request.data.get('new_urls')
+        old_urls = request.data.get('old_urls', [])
+        new_urls = request.data.get('new_urls', [])
 
-        if not event_id or not old_urls or not new_urls:
-            return Response({'error': 'Missing required parameter: event_id, old_urls, new_urls'}, status=status.HTTP_400_BAD_REQUEST)
+        if not event_id or not new_urls:
+            return Response({'error': 'Missing required parameter: event_id or new_urls'}, status=status.HTTP_400_BAD_REQUEST)
         if not isinstance(old_urls, list) or not isinstance(new_urls, list):
             return Response({'error': 'old_urls and new_urls must be lists'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            if old_urls:
-                Image.objects.filter(event_id=event_id, url__in=old_urls).delete()
+            # start transaction
+            with transaction.atomic(): 
 
-            event = Event.objects.get(id=event_id)
-            for url in new_urls:
-                Image.objects.create(event=event, url=url)
-            
-            resp = {
-                'data': 'Event images updated successfully',
-                'error': None,
-                'status': status.HTTP_200_OK             
-            }
+                if old_urls:
+                    Image.objects.filter(event_id=event_id, url__in=old_urls).delete()
 
-            return Response(resp, status=status.HTTP_200_OK)
-        
+                event = Event.objects.get(id=event_id)
+                for url in new_urls:
+                    Image.objects.create(event=event, url=url)
+
+            return Response({'message': 'Event images updated successfully'}, status=status.HTTP_200_OK)
         except Event.DoesNotExist:
             return Response({'error': 'Event not found'}, status=status.HTTP_404_NOT_FOUND)
-        
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
