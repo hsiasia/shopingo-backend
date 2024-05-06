@@ -36,61 +36,53 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             )
         ]
     )
-    def get(self, request, *args, **krgs):
+    def get(self, request, *args, **kwargs):
         event_id = request.query_params.get('event_id')
         user_id = request.query_params.get('user_id')
         
+        def add_images(event):
+            images = Image.objects.filter(event_id=event['id']).values_list('url', flat=True)
+            event['images'] = list(images)
+            return event
+
         if event_id: 
             data = Event.objects.filter(id=event_id).\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
-            if data:
-                resp = {
-                    'data': list(data),
-                    'error': None,
-                }
-                return JsonResponse(resp, status = status.HTTP_200_OK)
-            else:
-                resp = {
-                    'data': list(data),
-                    'error': "data with specified event_ID not found",
-                }
-                return JsonResponse(resp, status = status.HTTP_404_NOT_FOUND)
-        elif user_id: 
+            
+            events = [add_images(event) for event in data]
+            resp = {
+                'data': events,
+                'error': None if events else "data with specified event_ID not found"
+            }
+            status_code = status.HTTP_200_OK if events else status.HTTP_404_NOT_FOUND
+            return JsonResponse(resp, status=status_code)
+
+        elif user_id:
             data = Event.objects.filter(creator=user_id).\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
-            if data:
-                resp = {
-                    'data': list(data),
-                    'error': None,
-                }
-                return JsonResponse(resp, status = status.HTTP_200_OK)
-            else:
-                resp = {
-                    'data': list(data),
-                    'error': "data with specified user_ID not found",
-                }
-                return JsonResponse(resp, status = status.HTTP_404_NOT_FOUND)
+            
+            events = [add_images(event) for event in data]
+            resp = {
+                'data': events,
+                'error': None if events else "data with specified user_ID not found"
+            }
+            status_code = status.HTTP_200_OK if events else status.HTTP_404_NOT_FOUND
+            return JsonResponse(resp, status=status_code)
         
-        else: 
+        else:
             data = Event.objects.\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
-            if data:
-                resp = {
-                    'data': list(data),
-                    'error': None,
-                    'status': status.HTTP_200_OK, 
-                }
-            else:
-                resp = {
-                    'data': list(data),
-                    'error': "data with specified user_ID not found",
-                    'status': status.HTTP_404_NOT_FOUND, 
-                }
-
-            return JsonResponse(resp)
+            
+            events = [add_images(event) for event in data]
+            resp = {
+                'data': events,
+                'error': None if events else "No events found"
+            }
+            status_code = status.HTTP_200_OK if events else status.HTTP_404_NOT_FOUND
+            return JsonResponse(resp, status=status_code)
     def perform_create(self, serializer):
         # Set event_date to the current date and time
         serializer.save(create_datetime=timezone.now())
