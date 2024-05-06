@@ -442,7 +442,7 @@ class UpdateEventImage(generics.GenericAPIView):
                     description='List of new image URLs to be added'
                 )
             },
-            required=['event_id', 'old_urls', 'new_urls']  # Adjust as per your requirements
+            required=['event_id', 'old_urls', 'new_urls'] 
         )
     )
     def post(self, request, *args, **kwargs):
@@ -456,6 +456,7 @@ class UpdateEventImage(generics.GenericAPIView):
             return Response({'error': 'old_urls and new_urls must be lists'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # start transaction
             with transaction.atomic(): 
 
                 if old_urls:
