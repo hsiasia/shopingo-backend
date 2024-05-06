@@ -27,5 +27,8 @@ class Participant(models.Model):
 
 
 class Image(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=False)
-    url = models.CharField(max_length=256, null=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    url = models.CharField(max_length=256)
+
+    class Meta:
+        unique_together = ('event', 'url') 
