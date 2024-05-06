@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.db import transaction
 # Create your views here.
 from rest_framework import generics
+from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied
 
 from drf_yasg.utils import swagger_auto_schema
 
@@ -14,8 +16,9 @@ from drf_yasg import openapi
 from rest_framework import status
 from rest_framework.response import Response
 from django.http import JsonResponse
+from datetime import datetime, timedelta
+import pytz
 
-from django.utils import timezone
 
 
 from channels.layers import get_channel_layer
@@ -212,6 +215,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 'status': status.HTTP_404_NOT_FOUND, 
             }
             return JsonResponse(resp)
+            """
     @swagger_auto_schema(
         operation_summary='Delete Event',
         operation_description='Delete an event by ID',
@@ -224,6 +228,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             )
         ]
     )
+    
     def delete(self, request, *args, **kwargs):
         # Extract event_id from URL path
         event_id = request.query_params.get('event_id')
@@ -245,6 +250,53 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 'status': status.HTTP_404_NOT_FOUND, 
             }
             return JsonResponse(resp) 
+    """
+    def delete(self, request, *args, **kwargs):
+        # Extract user_id and event_id from the request
+        user_id = request.query_params.get('user_id')
+        event_id = request.query_params.get('event_id')
+        
+        if not user_id or not event_id:
+            resp = {
+                'error': "Both user_id and event_id are required",
+                'status': status.HTTP_400_BAD_REQUEST,
+            }
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # Retrieve the event object from the database
+            event = Event.objects.get(id=event_id)
+            
+            # Check if the user is the creator of the event
+            if event.creator_id != user_id:
+                raise PermissionDenied("Only the creator of the event can delete it.")
+            
+            # Get the current datetime
+            current_datetime = datetime.now()
+            # Set the timezone to GMT+8
+            timezone_GMT8 = pytz.timezone('Asia/Shanghai')  # Use 'Asia/Shanghai' for GMT+8
+
+            # Convert the current datetime to GMT+8 timezone
+            current_datetime_GMT8 = current_datetime.astimezone(timezone_GMT8)
+            print(event.event_date)
+            print(current_datetime_GMT8)
+            event_datetime_naive = event.event_date.replace(tzinfo=None)
+            current_datetime_GMT8 =current_datetime_GMT8.replace(tzinfo=None)
+            # Calculate the difference in hours
+            time_difference_hours = (event_datetime_naive - current_datetime_GMT8 ).total_seconds() / 3600
+
+            print("Difference in hours:", time_difference_hours)
+            if time_difference_hours < 24:
+                raise PermissionDenied("Event cannot be deleted within 24 hours of its start time.")
+            """
+            # Delete the event
+            event.delete()
+            """
+            return Response({'message': 'Event deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        
+        except Event.DoesNotExist:
+            # Return 404 response if event with specified ID doesn't exist
+            return Response({'error': "Event with specified ID not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 
