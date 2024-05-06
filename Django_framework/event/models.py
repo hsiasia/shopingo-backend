@@ -17,7 +17,7 @@ class Event(models.Model):
     update_datetime = models.DateTimeField(null=False, auto_now=True)
     delete_datetime = models.DateTimeField(null=True)
     score = models.IntegerField(null=True)
-
+    coordinate = models.JSONField(null=True)
 
     def __str__(self):
         return self.event_name
