@@ -11,6 +11,7 @@ from .models import Event, Image
 from .models import Participant
 from .serializers import GetEventSerializer
 from .serializers import ParticipantSerializer
+from .serializers import UpdateEventSerializer
 
 from drf_yasg import openapi
 from rest_framework import status
@@ -185,13 +186,27 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                     'status': status.HTTP_404_NOT_FOUND,
                 }
                 return JsonResponse(resp, status=status.HTTP_404_NOT_FOUND)
-            # Serialize the updated data
-            serializer = self.get_serializer(event, data=request.data)
+                        # Get the current datetime
+            current_datetime = datetime.now()
+            # Set the timezone to GMT+8
+            timezone_GMT8 = pytz.timezone('Asia/Shanghai')  # Use 'Asia/Shanghai' for GMT+8
 
+            # Convert the current datetime to GMT+8 timezone
+            current_datetime_GMT8 = current_datetime.astimezone(timezone_GMT8)
+            event_datetime_naive = event.event_date.replace(tzinfo=None)
+            current_datetime_GMT8 =current_datetime_GMT8.replace(tzinfo=None)
+            # Calculate the difference in hours
+            time_difference_hours = (event_datetime_naive - current_datetime_GMT8 ).total_seconds() / 3600
+
+            print("Difference in hours:", time_difference_hours)
+            if time_difference_hours < 24:
+                raise PermissionDenied("Event cannot be deleted within 24 hours of its start time.")
+            # Serialize the updated data
+            serializer = UpdateEventSerializer(event, data=request.data, partial=True)
             # Validate the serializer
             if serializer.is_valid():
                 # Save the updated data
-                serializer.save()
+                serializer.save(update_datetime=timezone.now())
 
                 """
                 channel_layer = get_channel_layer()
@@ -263,8 +278,6 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
 
             # Convert the current datetime to GMT+8 timezone
             current_datetime_GMT8 = current_datetime.astimezone(timezone_GMT8)
-            print(event.event_date)
-            print(current_datetime_GMT8)
             event_datetime_naive = event.event_date.replace(tzinfo=None)
             current_datetime_GMT8 =current_datetime_GMT8.replace(tzinfo=None)
             # Calculate the difference in hours
