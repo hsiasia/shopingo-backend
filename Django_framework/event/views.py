@@ -5,7 +5,7 @@ from rest_framework import generics
 
 from drf_yasg.utils import swagger_auto_schema
 
-from .models import Event
+from .models import Event, Image
 from .models import Participant
 from .serializers import GetEventSerializer
 from .serializers import ParticipantSerializer
@@ -421,3 +421,58 @@ class HandleGetEventsByStatus(generics.GenericAPIView):
         }
 
         return JsonResponse(resp,status= status.HTTP_200_OK)
+    
+
+class UpdateEventImage(generics.GenericAPIView):
+    @swagger_auto_schema(
+        operation_summary='Update Event Images',
+        operation_description='Updates images for the specified event. Deletes old URLs and adds new URLs.',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'event_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the event'),
+                'old_urls': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_STRING),
+                    description='List of old image URLs to be deleted'
+                ),
+                'new_urls': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_STRING),
+                    description='List of new image URLs to be added'
+                )
+            },
+            required=['event_id', 'old_urls', 'new_urls']  # Adjust as per your requirements
+        )
+    )
+    def post(self, request, *args, **kwargs):
+        event_id = request.data.get('event_id')
+        old_urls = request.data.get('old_urls')
+        new_urls = request.data.get('new_urls')
+
+        if not event_id or not old_urls or not new_urls:
+            return Response({'error': 'Missing required parameter: event_id, old_urls, new_urls'}, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(old_urls, list) or not isinstance(new_urls, list):
+            return Response({'error': 'old_urls and new_urls must be lists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if old_urls:
+                Image.objects.filter(event_id=event_id, url__in=old_urls).delete()
+
+            event = Event.objects.get(id=event_id)
+            for url in new_urls:
+                Image.objects.create(event=event, url=url)
+            
+            resp = {
+                'data': 'Event images updated successfully',
+                'error': None,
+                'status': status.HTTP_200_OK             
+            }
+
+            return Response(resp, status=status.HTTP_200_OK)
+        
+        except Event.DoesNotExist:
+            return Response({'error': 'Event not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
