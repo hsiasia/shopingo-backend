@@ -215,42 +215,27 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 'status': status.HTTP_404_NOT_FOUND, 
             }
             return JsonResponse(resp)
-            """
+            
     @swagger_auto_schema(
-        operation_summary='Delete Event',
-        operation_description='Delete an event by ID',
-        manual_parameters=[
-            openapi.Parameter(
-                name='event_id',
-                in_=openapi.IN_QUERY,
-                description='Event ID to delete',
-                type=openapi.TYPE_INTEGER
+    operation_summary='Delete Event',
+    operation_description='Delete an event by event ID and creator ID',
+    manual_parameters=[
+        openapi.Parameter(
+            name='event_id',
+            in_=openapi.IN_QUERY,
+            description='Event ID to delete',
+            type=openapi.TYPE_INTEGER
+            ),
+        openapi.Parameter(
+            name='user_id',
+            in_=openapi.IN_QUERY,
+            description='Creator ID performing the delete operation',
+            type=openapi.TYPE_INTEGER
             )
         ]
     )
     
-    def delete(self, request, *args, **kwargs):
-        # Extract event_id from URL path
-        event_id = request.query_params.get('event_id')
-        
-        if event_id:
-            try:
-                # Retrieve the event object from the database
-                event = Event.objects.get(id=event_id)
-                # Delete the event
-                event.delete()
-                return Response({'message': 'Event deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
-            except Event.DoesNotExist:
-                # Return 404 response if event with specified ID doesn't exist
-                return Response({'error': "Event with specified ID not found"}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            resp = {
-                'data': None,
-                'error': "data with specified eventID not found",
-                'status': status.HTTP_404_NOT_FOUND, 
-            }
-            return JsonResponse(resp) 
-    """
+
     def delete(self, request, *args, **kwargs):
         # Extract user_id and event_id from the request
         user_id = request.query_params.get('user_id')
