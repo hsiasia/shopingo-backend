@@ -2,10 +2,23 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-t"
+      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
+      - "./Django_framework"
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
+
   - name: "gcr.io/cloud-builders/gcloud"
     args:
       - "compute"
       - "instances"
-      - "reset"
-      - "instance-20240425-125736"
+      - "update-container"
+      - "test2"
+      - "--container-image=asia-east1-docker.pkg.dev/shopinggo-419206/shopinggo/image:$BUILD_ID"
       - "--zone=asia-east1-b"

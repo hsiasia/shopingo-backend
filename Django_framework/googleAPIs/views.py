@@ -76,18 +76,20 @@ class GenerateSignedUrlsAPIView(generics.CreateAPIView):
                 'status': status.HTTP_400_BAD_REQUEST
             }
             return Response(resp, status=status.HTTP_400_BAD_REQUEST)
-
+        
         try:
             urls = generate_download_signed_urls(blob_names)
+                
             resp = {
                 'data': urls,
-                'error' : None,
+                'error': None,
                 'status': status.HTTP_201_CREATED
             }
-            return Response(resp,status=status.HTTP_201_CREATED)
+            return Response(resp, status=status.HTTP_201_CREATED)
+
         except Exception as e:
             resp = {
-                'data':None,
+                'data': None,
                 'error': str(e),
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR
             }

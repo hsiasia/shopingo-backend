@@ -32,6 +32,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['35.201.139.198','localhost','shopingo.info']
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
