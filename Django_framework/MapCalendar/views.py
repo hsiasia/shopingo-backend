@@ -28,7 +28,7 @@ from googleapiclient.errors import HttpError
 
 
 #SaveEventLoaction
-class SaveEventLocation(APIView):  #還是要改成put?
+class SaveEventLocation(APIView):
     def post(self, request):
         try:
             eventid = request.POST.get('event_id')
