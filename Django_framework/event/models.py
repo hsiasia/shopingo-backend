@@ -27,7 +27,9 @@ class Participant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     score = models.IntegerField(null=True)
 
-
+class SavedEvent(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
 
 
 class Image(models.Model):

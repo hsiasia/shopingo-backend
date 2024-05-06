@@ -6,9 +6,10 @@ from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
 from .models import Event, Image
-from .models import Participant
+from .models import Participant,SavedEvent
 from .serializers import GetEventSerializer
 from .serializers import ParticipantSerializer
+from .serializers import SavedEventSerializer
 
 from drf_yasg import openapi
 from rest_framework import status
@@ -298,6 +299,75 @@ class HandleCreateParticipant(generics.CreateAPIView):
     @swagger_auto_schema(
         operation_summary='Join Event',
         operation_description='POST http://34.81.121.53/:8000/api/eventInfo/',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'event_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'user_id': openapi.Schema(type=openapi.TYPE_STRING)
+                # Add other properties of your Event model here
+            },
+            required=['event', 'user']  # Adjust as per your serializer requirements
+        )
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            response_data = {
+                'data': serializer.data
+            }
+            response = JsonResponse(response_data, status=status.HTTP_201_CREATED)
+            for header, value in headers.items():
+                response[header] = value
+            return response
+        else:
+            response_data = {
+                'errors': serializer.errors
+            }
+            return JsonResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HandleSavedEvent(generics.CreateAPIView):
+    queryset = SavedEvent.objects.all()
+    serializer_class = SavedEventSerializer
+    @swagger_auto_schema(
+        operation_summary='Get Saved Event',
+        operation_description="""
+        Get all saved event by user ID:http://34.81.121.53/:8000/api/saveEvent/?user_id=1""",
+
+        manual_parameters=[
+            openapi.Parameter(
+                name='user_id',
+                in_=openapi.IN_QUERY,
+                description='USER ID',
+                type=openapi.TYPE_STRING
+            )
+        ]
+    )
+    def get(self, request, *args, **krgs):
+        user_id = request.query_params.get('user_id')
+        if user_id: 
+            data = SavedEvent.objects.filter(user_id=user_id).\
+                values(
+                    'event', 'user')
+            resp = {
+                'data': list(data),
+                'error': None,
+                'status': status.HTTP_200_OK, 
+            }
+            return JsonResponse(resp)
+        else: 
+            resp = {
+                'data': None,
+                'error': "No userId provided",
+                'status': status.HTTP_400_BAD_REQUEST, 
+            }
+            return JsonResponse(resp)
+            
+    @swagger_auto_schema(
+        operation_summary='Create Save Event',
+        operation_description='POST http://34.81.121.53/:8000/api/saveEvent/',
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
