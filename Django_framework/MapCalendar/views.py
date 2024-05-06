@@ -28,13 +28,13 @@ from googleapiclient.errors import HttpError
 
 
 #SaveEventLoaction
-class SaveEventLocation(APIView):
+class SaveEventLocation(APIView):  #還是要改成put?
     def post(self, request):
         try:
             eventid = request.POST.get('event_id')
             EventLocation = request.POST.get('event_Location').geometry.location
             event = Event.objects.get(pk=eventid)
-            event.location = EventLocation
+            event.location = EventLocation #要處理json嗎？
 
             resp = {
                 'error':None,
@@ -100,8 +100,8 @@ class GetDistance(APIView):
         try:
             data = request.GET.get('user_location')
             json_data = json.loads(data)
-            lat = json_data['latitude']
-            lon = json_data['longitude']
+            lat = json_data['coords']['latitude']
+            lon = json_data['coords']['longitude']
             UserLocation = {
                 "latitude": lat,
                 "longitude": lon
