@@ -145,29 +145,21 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             openapi.Parameter(
                 name='event_id',
                 in_=openapi.IN_QUERY,
-                description='Event ID to update',
+                description='Event ID to update, can partial update one/more of the fields below',
                 type=openapi.TYPE_INTEGER
             )
         ],
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                'creator': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'event_name': openapi.Schema(type=openapi.TYPE_STRING),
-                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
                 'hashtag': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
-                'location': openapi.Schema(type=openapi.TYPE_STRING),
                 'event_date': openapi.Schema(type=openapi.FORMAT_DATETIME),
                 'scale': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'budget': openapi.Schema(type=openapi.TYPE_INTEGER),
                 'detail': openapi.Schema(type=openapi.TYPE_STRING),
-                'create_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
-                'update_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
-                'delete_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME, nullable=True),
-
-                'score': openapi.Schema(type=openapi.TYPE_INTEGER),
             },
-            required=['id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime', 'score']  # Adjust as per your serializer requirements
+            required=[ 'event_name',  'hashtag', 'event_date', 'scale', 'budget', 'detail']  # Adjust as per your serializer requirements
 
         )
     )
