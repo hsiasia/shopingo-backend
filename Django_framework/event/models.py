@@ -28,4 +28,12 @@ class Participant(models.Model):
     score = models.IntegerField(null=True)
 
 
-  
+
+
+class Image(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    url = models.CharField(max_length=256)
+
+    class Meta:
+        unique_together = ('event', 'url') 
+

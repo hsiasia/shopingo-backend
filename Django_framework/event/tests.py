@@ -27,7 +27,6 @@ class UserProfileAPITest(TestCase):
             detail = "sudoDetail", 
             create_datetime = datetime.datetime.now(), 
             update_datetime = datetime.datetime.now(), 
-            score = 0, 
         )
 
         response = self.client.get('/api/event/', {'user_id': 'sudoID'}, format='json')
@@ -49,7 +48,6 @@ class UserProfileAPITest(TestCase):
             'detail': "sudoDetail2", 
             'create_datetime': datetime.datetime.now(), 
             'update_datetime': datetime.datetime.now(), 
-            'score': 0, 
         }
 
         response = self.client.post('/api/event/', data, format='json')
