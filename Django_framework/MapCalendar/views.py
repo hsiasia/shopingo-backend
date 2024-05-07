@@ -294,6 +294,33 @@ class updateCalendarEvent(APIView):
         pass
 
 
+
+
 class deleteCalendarEvent(APIView):
-    def delete(slef, request):
-        pass
+    def delete(self, request):
+        try:
+            userid = request.data.get('user_id')
+            user = User.objects.get(pk=userid)
+            eventid = request.data.get('event_id')
+        except:
+            resp = {
+                'error':"data with specified event_ID or user_ID not found",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+        
+        service = build('calendar', 'v3', credentials='credentials.json')
+        try:
+            service.events().delete(calendarId=user.calendarId, eventId=eventid).execute()
+
+            resp = {
+                'error':None,
+                'status':status.HTTP_200_OK
+            }
+            return JsonResponse(resp)
+        except:
+            resp = {
+                'error':"event deletion failed",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
