@@ -3,17 +3,6 @@ from .views import SaveEventLocation, GetEventLocation, UpdateEventLoaction, Get
 from .views import createCalendar, createCalenderEvent, updateCalendarEvent, deleteCalendarEvent
 
 
-# urlpatterns = [
-#     path("api/SaveEventLocation",SaveEventLocation.as_view(),name='SaveEventLocation'),
-#     path("api/GetEventLocation",GetEventLocation.as_view(),name='GetEventLocation'),
-#     path("api/UpdateEventLoaction",UpdateEventLoaction.as_view(),name='UpdateEventLoaction'),
-#     path("api/GetDistance",GetDistance.as_view(),name='GetDistance'),
-#     path("api/createCalendar",createCalendar.as_view(),name='createCalendar'),
-#     path("api/createCalenderEvent",createCalenderEvent.as_view(),name='createCalenderEvent'),
-#     path("api/updateCalenderEvent",updateCalendarEvent.as_view(),name='updateCalenderEvent'),
-#     path("api/deleteCalenderEvent",deleteCalendarEvent.as_view(),name='deleteCalenderEvent'),
-# ]
-
 urlpatterns = [
     path("api/map/SaveEventLocation",SaveEventLocation.as_view(),name='SaveEventLocation'),
     path("api/map/GetEventLocation",GetEventLocation.as_view(),name='GetEventLocation'),
