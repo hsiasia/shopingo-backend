@@ -44,4 +44,4 @@ urllib3==2.2.1
 googlemaps==4.10.0
 google==3.0.0
 google_auth_oauthlib==1.2.0
-#googleapiclient  --> not sure
+google-api-python-client==2.126.0
