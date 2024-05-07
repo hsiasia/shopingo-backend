@@ -9,7 +9,7 @@ urlpatterns = [
     path("api/map/UpdateEventLoaction",UpdateEventLoaction.as_view(),name='UpdateEventLoaction'),
     path("api/map/GetDistance",GetDistance.as_view(),name='GetDistance'),
     path("api/calendar/createCalendar",createCalendar.as_view(),name='createCalendar'),
-    path("api/calendar/createCalenderEvent",createCalenderEvent.as_view(),name='createCalenderEvent'),
-    path("api/calendar/updateCalenderEvent",updateCalendarEvent.as_view(),name='updateCalenderEvent'),
-    path("api/calendar/deleteCalenderEvent",deleteCalendarEvent.as_view(),name='deleteCalenderEvent'),
+    path("api/calendar/createCalendarEvent",createCalenderEvent.as_view(),name='createCalenderEvent'),
+    path("api/calendar/updateCalendarEvent",updateCalendarEvent.as_view(),name='updateCalenderEvent'),
+    path("api/calendar/deleteCalendarEvent",deleteCalendarEvent.as_view(),name='deleteCalenderEvent'),
 ]
