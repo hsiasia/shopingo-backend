@@ -9,7 +9,7 @@ class User(models.Model):
     score = models.FloatField(default=5, null=False)
     score_amounts = models.IntegerField(default=1, null=False)
     token = models.JSONField(null=True)
-    calendarId = models.CharField(max_length=50, null=True)
+    calendarId = models.CharField(max_length=100, null=True)
 
     def __str__(self):
         return self.name
