@@ -39,3 +39,10 @@ static3==0.7.0
 typing_extensions==4.10.0
 uritemplate==4.1.1
 urllib3==2.2.1
+
+#google map & calendar
+googlemaps==4.10.0
+google==3.0.0
+google_auth_oauthlib==1.2.0
+google-api-python-client==2.126.0
+

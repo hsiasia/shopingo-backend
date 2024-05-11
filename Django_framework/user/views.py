@@ -30,7 +30,6 @@ class GetUserByID(generics.ListAPIView):
         ]
     )
 
-    @jwt_required
     def get(self, request, *args, **krgs):
         user_id = request.query_params.get('user_id')
         if user_id: 
