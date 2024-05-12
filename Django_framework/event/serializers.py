@@ -9,10 +9,27 @@ class GetEventSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'create_datetime': {'required': False},  # Set required to False to allow null values
             'update_datetime': {'required': False},  # Set required to False to allow null values
-            'dalete_datetime': {'required': False},  # Set required to False to allow null values
+            'delete_datetime': {'required': False},  # Set required to False to allow null values
         }
 
-
+class UpdateEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['event_name', 'hashtag', 'event_date','scale', 'budget', 'detail','update_datetime']
+    def validate(self, data):
+        
+        # Define the list of fields that are allowed to be updated
+        allowed_fields = ['event_name', 'hashtag', 'event_date', 'budget', 'detail','update_datetime']
+        invalid_fields = []
+        
+        # Check if any invalid fields are present in the request data
+        for key,value in self.initial_data.items():
+            if key not in allowed_fields:
+                invalid_fields.append(key)
+        # If there are any invalid fields, raise a ValidationError
+        if invalid_fields:
+            raise serializers.ValidationError(f"Invalid fields: {', '.join(invalid_fields)}")
+        return data
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
