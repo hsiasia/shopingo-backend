@@ -26,6 +26,7 @@ class Participant(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     score = models.IntegerField(null=True)
+    calendarEventId = models.CharField(max_length=100, null=True)
 
 class SavedEvent(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=False)
