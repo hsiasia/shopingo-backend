@@ -6,11 +6,10 @@ from event.models import Event, Participant
 import googlemaps
 from django.http import JsonResponse
 from rest_framework import status
-from event.serializers import ParticipantSerializer
 import json
 import os
-import urllib.parse
 import datetime
+from Django_framework.settings import GOOGLE_MAP_KEY
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -78,9 +77,37 @@ class GetEventLocation(APIView):
 
 #算user到目前列出來的event的距離，以開車距離作為排序（由近到遠）
 class GetDistance(APIView):
+    def convert_to_minutes(self, time_str):
+        total_minutes = 0
+        
+        # 將輸入的字串分割成單個時間單位
+        units = time_str.split()
+        
+        # 遍歷每個時間單位
+        for i in range(0, len(units), 2):
+            value = int(units[i])  # 時間數值
+            unit = units[i+1]      # 時間單位
+            
+            # 根據時間單位將時間轉換成分鐘數
+            if unit == "day" or unit == "days":
+                total_minutes += value * 24 * 60
+            elif unit == "hour" or unit == "hours":
+                total_minutes += value * 60
+            elif unit == "min" or unit == "mins":
+                total_minutes += value
+        
+        return total_minutes
+
     def get(self, request):
         #googlemap client
-        gmaps = googlemaps.Client(key='AIzaSyBnEyRCRUhtHZCDvmMrGZn04PEjPjPlf2E')
+        try:
+            gmaps = googlemaps.Client(key=GOOGLE_MAP_KEY)
+        except:
+            resp = {
+                'error':"failed use googlemaps.Client",
+                'status':status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp)
 
         try:
             orderList = []
@@ -114,9 +141,9 @@ class GetDistance(APIView):
                     }}
                 
                 orderList.append([eventid,data])
-            
+
             #以drive time作為排序
-            resultList = sorted(orderList, key=lambda x:x[1]["drive"]["d_dist"])
+            resultList = sorted(orderList, key=lambda x:self.convert_to_minutes(x[1]["drive"]["d_time"]),reverse=False)
             resultDict = {}
             for item in resultList:
                 resultDict[item[0]]=item[1]
@@ -240,7 +267,8 @@ class createCalendar(APIView):
             }
             return JsonResponse(resp)
 
-        path = os.path.join(os.getcwd(),"MapCalendar/credentials.json")
+        #path = os.path.join(os.getcwd(),"MapCalendar/credentials.json")
+        path = ".credentials.json"
         flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
         creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #after extent SCOPES
         user.token = creds.to_json()
