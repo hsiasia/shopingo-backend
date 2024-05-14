@@ -33,8 +33,7 @@ class UpdateEventSerializer(serializers.ModelSerializer):
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
-
-        fields = ['event', 'user','score']
+        fields = ['event', 'user','score','calendarEventId']
 
 class SavedEventSerializer(serializers.ModelSerializer):
     class Meta:

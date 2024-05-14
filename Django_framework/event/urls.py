@@ -1,7 +1,7 @@
 from django.urls import path
 
 from django.urls import re_path
-from .consumers import EventUpdatesConsumer
+#from .consumers import EventUpdatesConsumer
 from event.views import  HandleGetAllAndCreateEvent, HandleCreateParticipant,HandleGetEventsByStatus, UpdateEventImage,HandleSavedEvent
 
 

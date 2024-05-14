@@ -2,12 +2,15 @@
 
 from rest_framework.views import APIView
 from user.models import User
-from event.models import Event
+from event.models import Event, Participant
 import googlemaps
 from django.http import JsonResponse
 from rest_framework import status
+from event.serializers import ParticipantSerializer
 import json
 import os
+import urllib.parse
+import datetime
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -17,27 +20,25 @@ from googleapiclient.errors import HttpError
 
 
 
-#
-# google MAP
-#
-#1. SaveEventLocation
-#2. GetEventLocation
-#3. UpdateEventLoaction
-#4. GetDistance
-#
+#------------------------------------------
+#             google Map
+#------------------------------------------
+# 1. SaveEventLocation
+# 2. GetEventLocation
+# 3. GetDistance
 
 
-#SaveEventLoaction
 class SaveEventLocation(APIView):
     def post(self, request):
         try:
-            eventid = request.POST.get('event_id')
-            EventLocation = request.POST.get('coords')
+            eventid = request.data.get('event_id')
+            EventLocation = request.data.get('coords')
             event = Event.objects.get(pk=eventid)
-            event.coordinate = EventLocation #要處理json嗎？
+            event.coordinate = EventLocation
+            event.save()
 
             resp = {
-                'error':None,
+                'data':event.coordinate,
                 'status':status.HTTP_201_CREATED
             }
             return JsonResponse(resp)
@@ -50,7 +51,6 @@ class SaveEventLocation(APIView):
             return JsonResponse(resp)
 
 
-#GetEventLocation
 class GetEventLocation(APIView):
     def get(self, request):
         try:
@@ -71,49 +71,78 @@ class GetEventLocation(APIView):
                 'status':status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
-        
-#TODO: 
-#UpdateEventLoaction
-class UpdateEventLoaction(APIView):
-    def put(self, request):
-        try:
-            eventid = request.PUT.get('event_id')
-            newLocation = request.PUT.get('location')
-            event = Event.objects.get(pk=eventid)
-            event.coordinate = newLocation
-            #update需要return什麼
-        except:
-            pass
-            #return...
-    
-        
 
 
-#GetDistance
+
+
+
+#算user到目前列出來的event的距離，以開車距離作為排序（由近到遠）
 class GetDistance(APIView):
+    def get(self, request):
+        #googlemap client
+        gmaps = googlemaps.Client(key='AIzaSyBnEyRCRUhtHZCDvmMrGZn04PEjPjPlf2E')
+
+        try:
+            orderList = []
+            json_data = json.loads(request.body)
+            events = json_data['data']
+            for eve in events:
+                eventid = eve['event_id']
+                event = Event.objects.get(pk=eventid)
+                EventLocation = event.coordinate
+
+                lat = eve['latitude']
+                long = eve['longitude']
+                UserLocation = {"latitude":lat, "longitude":long}
+
+                walk_data = gmaps.directions(UserLocation, EventLocation,mode='walking')
+                w_dist = walk_data[0]['legs'][0]['distance']['text']
+                w_time = walk_data[0]['legs'][0]['duration']['text']
+
+                drive_data = gmaps.directions(UserLocation, EventLocation,mode='driving')
+                d_dist = drive_data[0]['legs'][0]['distance']['text']
+                d_time = drive_data[0]['legs'][0]['duration']['text']
+
+                data = {
+                    "walk": {
+                        "w_dist": w_dist,
+                        "w_time": w_time
+                    },
+                    "drive": {
+                        "d_dist": d_dist,
+                        "d_time": d_time
+                    }}
+                
+                orderList.append([eventid,data])
+            
+            #以drive time作為排序
+            resultList = sorted(orderList, key=lambda x:x[1]["drive"]["d_dist"])
+            resultDict = {}
+            for item in resultList:
+                resultDict[item[0]]=item[1]
+            res = {
+                'data':resultDict,
+                'error':None,
+                'status':status.HTTP_200_OK
+            }
+            return JsonResponse(res)
+        except:
+            resp = {
+                'data':None,
+                'error': "gmaps calcuation error",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+
+
+'''
+#算user到某一個event的距離
+class GetDistance2(APIView):
     def get(self, request):
     
         #googlemap client
         gmaps = googlemaps.Client(key='AIzaSyBnEyRCRUhtHZCDvmMrGZn04PEjPjPlf2E')
 
-        #user
-        try:
-            UserLocation = request.GET.get('user_location')
-            # json_data = json.loads(data)
-            # lat = json_data['coords']['latitude']
-            # lon = json_data['coords']['longitude']
-            # UserLocation = {
-            #     "latitude": lat,
-            #     "longitude": lon
-            # }
-        except:
-            resp = {
-                'data':None,
-                'error': "data with specified user_ID not found",
-                'status': status.HTTP_404_NOT_FOUND
-            }
-            return JsonResponse(resp)
-        
         #event
         try:
             eventid = request.GET.get('event_id')
@@ -126,6 +155,21 @@ class GetDistance(APIView):
                 'status': status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
+
+        #user
+        try:
+            lat = request.GET.get('latitude')
+            long = request.GET.get('longitude')
+            UserLocation = {"latitude":lat, "longitude":long}
+        except:
+            resp = {
+                'data':None,
+                'error': "user_location not found",
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+        
+
             
         #distance
         #mode= ["driving", "walking", "bicycling", "transit"]
@@ -160,25 +204,29 @@ class GetDistance(APIView):
                 'status':status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
+'''
 
-#
-# google Calendar
-#
+
+
+#------------------------------------------
+#             google Calendar
+#------------------------------------------
 # 1. createCalendar
-# 2. createCalenderEvent
-# 3. updateCalenderEvent
-# 4. deleteCalenderEvent
-#
+# 2. deleteCalendar
+# 3. createCalendarEvent
+# 4. deleteCalendarEvent
+# 5. updateCalendarEvent
+# 6. getCalendarId_token
 
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
-
-#user被創建時就要建立了！
 class createCalendar(APIView):
     def post(self, request):
+        SCOPES = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/calendar.events" #add
+        ]
         try:
-            userid = request.POST.get('user_id')
-            user = User.objects.get(pk=userid)
-
+            userid = request.data.get('user_id')
+            user = User.objects.get(id=userid)
         except:
             resp = {
                 'error': "data with specified user_ID not found",
@@ -186,103 +234,197 @@ class createCalendar(APIView):
             }
             return JsonResponse(resp)
 
-        # 1. 取得token令牌以獲得資源、使用credentials等OAuth認證資訊已使用api
-        creds = None
-        if user.token:
-            creds = Credentials.from_authorized_user_file(user.token, SCOPES)
+        if user.calendarId!=None or user.token!=None:
+            resp = {
+                'error':"Already created Calendar "
+            }
+            return JsonResponse(resp)
 
-        # 2. generate credential.json
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    "credentials.json", SCOPES
-                )
-                creds = flow.run_local_server(port=8000)  #port correct?
-                    
-            # Save the token for the next run
-            user.token = creds.to_json()
-            
-        #3. get calendar
+        path = os.path.join(os.getcwd(),"MapCalendar/credentials.json")
+        flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
+        creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #after extent SCOPES
+        user.token = creds.to_json()
+        user.save()
+
+
         service = build("calendar", "v3", credentials=creds)
-
-
-
-
-
+        
         calendar = {
-            'summary': 'ShopinggoEvents',  #日曆名稱
+            'summary': 'ShopingoEvents',  #日曆名稱
             'timeZone': 'Asia/Taipei' 
         }
         new_calendar = service.calendars().insert(body=calendar).execute()
-        user.calendarId = new_calendar.id
+        user.calendarId = new_calendar['id']
+        user.save()
+        resp = {
+            'status':status.HTTP_200_OK
+        }
+        return JsonResponse(resp)
 
-    
 
-
-class createCalenderEvent(APIView):
-    def post(self, request):
+class deleteCalendar(APIView):
+    def delete(self, request):
+        SCOPES = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/calendar.events"
+        ]
         try:
-            userid = request.POST.get('user_id')
+            userid = request.data.get('user_id')
             user = User.objects.get(pk=userid)
-            eventid = request.POST.get('event_id')
-            event = Event.objects.get(pk=eventid)
-            calendarid = user.calendarId
         except:
+            resp = {
+                'error':"data with specified user_ID not found",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+        
+        try:
+            if user.calendarId is None and user.token is None:
+                resp = {
+                    'error':"No calendar can be delete",
+                    'status':status.HTTP_400_BAD_REQUEST
+                }
+                return JsonResponse(resp)
+
+            creds = Credentials.from_authorized_user_info(json.loads(user.token), SCOPES)
+            service = build("calendar", "v3", credentials=creds)
+            service.calendarList().delete(calendarId=user.calendarId).execute()
+            user.calendarId=None
+            user.token=None
+            user.save()
+
+            resp = {
+                'error':None,
+                'status':status.HTTP_200_OK
+            }
+            return JsonResponse(resp)
+        except Exception as e:
+            print("[e] : \n",e,"\n\n")
+            resp = {
+                'error':"calendar deletion failed",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+
+
+
+
+
+
+class createCalendarEvent(APIView):
+    def put(self, request):
+        SCOPES = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/calendar.events"
+        ]
+        try:
+            userid = request.data.get('user_id')
+            user = User.objects.get(pk=userid)
+            eventid = request.data.get('event_id')
+            event = Event.objects.get(pk=eventid)     
+            
+            #這裡可能不會執行到，因為前端不會讓用者重複join
+            #如果calendarEventId欄位不為None則表示已經join了
+            if not Participant.objects.filter(event_id=eventid, user_id=userid, calendarEventId=None).values_list('calendarEventId').exists():
+                resp = {
+                    'error' : "user have been added this event before",
+                    'status' : status.HTTP_409_CONFLICT
+                }
+                return JsonResponse(resp)
+        except Exception as e:
+            print("[error]\n",e)
             resp = {
                 'error': "data with specified event_ID or user_ID not found",
                 'status':status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
-            
-        try:
-            #-------------------------------------------------------------------------
-            # 1. 取得token令牌以獲得資源、使用credentials等OAuth認證資訊已使用api
-            creds = None
-            if user.token:
-                creds = Credentials.from_authorized_user_file(user.token, SCOPES)
 
-            # 2. generate credential.json
-            if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        "credentials.json", SCOPES
-                    )
-                    creds = flow.run_local_server(port=8000)  #port correct?
-                    
-                # Save the token for the next run
-                user.token = creds.to_json()
-            
-            #3. get calendar
-            service = build("calendar", "v3", credentials=creds)
-            eventInfo = {
-                'id':event.id,
-                'summary': event.event_name,    ##??title of event
-                'location': event.location
-                #....others
+        if user.token is None:  #for first event
+            path = os.path.join(os.getcwd(),"MapCalendar/credentials.json")
+            flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)         
+            creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #???
+            user.token = creds.to_json()
+            user.save()
+        else:
+            creds = Credentials.from_authorized_user_info(json.loads(user.token), SCOPES)
+            creds.refresh(Request())
+
+        service = build("calendar", "v3", credentials=creds)
+
+        eventInfo = {
+            "summary": event.event_name, 
+            "location": event.location,
+            "start": {
+                "dateTime":event.event_date.isoformat(),
+                "timeZone": 'Asia/Taipei',
+            },
+            "end": {
+                "dateTime":  (event.event_date + datetime.timedelta(hours=1)).isoformat(),
+                "timeZone": 'Asia/Taipei',
+            },
+            "description": event.detail
+        }
+
+        try:
+            created_event = service.events().insert(calendarId=user.calendarId, body=eventInfo).execute()
+            Participant.objects.filter(event_id=eventid, user_id=userid).update(calendarEventId=created_event['id'])
+
+            resp = {
+                'error':None,
+                'status':status.HTTP_201_CREATED
             }
-            try:
-                event = service.events().insert(calendarId=user.calendarId, body=eventInfo).execute()
-                resp = {
-                    'error':None,
-                    'status':status.HTTP_200_OK
-                }
-                return JsonResponse(resp)
-            except:
-                resp = {
-                    'error': "create duplicate event (id)",
-                    'status': status.HTTP_400_BAD_REQUEST
-                }
-                return JsonResponse(resp)
-            
-            
+            return JsonResponse(resp)
         except:
             resp = {
-                'error': "access googel api failed",
-                'status': status.HTTP_400_BAD_REQUEST
+                'error':"create duplicate event (id)",
+                'status':status.HTTP_409_CONFLICT
+            }
+            return JsonResponse(resp)
+
+
+class deleteCalendarEvent(APIView):
+    def delete(self, request):
+        SCOPES = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/calendar.events"
+        ]
+        try:
+            userid = request.data.get('user_id')
+            user = User.objects.get(pk=userid)
+            eventid = request.data.get('event_id')
+        except:
+            resp = {
+                'error':"data with specified user_ID not found",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+        
+        try:   
+            #應該要改成 .filter(event_id=eventid, user_id=userid)因為目前手動的data是還沒有放calendarEventId的，不過不影響
+            if Participant.objects.filter(event_id=eventid, user_id=userid,calendarEventId=None).values_list('event_id','user_id','calendarEventId').exists():
+                resp = {
+                    'error':"no event can be deleted"
+                }
+                return JsonResponse(resp)
+        
+            creds = Credentials.from_authorized_user_info(json.loads(user.token), SCOPES)
+            creds.refresh(Request())
+            service = build("calendar", "v3", credentials=creds)
+            calendar_event_id = Participant.objects.filter(event_id=eventid, user_id=userid).values_list('calendarEventId')[0][0]
+            service.events().delete(calendarId=user.calendarId, eventId=calendar_event_id).execute()  #-->eventId = CalendarEventId
+            
+            Participant.objects.filter(event_id=eventid, user_id=userid).update(calendarEventId=None)
+
+            resp = {
+                'error':None,
+                'status':status.HTTP_200_OK
+            }
+            return JsonResponse(resp)
+        except Exception as e:
+            print("[ERROR]:\n",e,"\n\n")
+            resp = {
+                'error':"event deletion failed",
+                'status':status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
 
@@ -291,36 +433,95 @@ class createCalenderEvent(APIView):
 
 class updateCalendarEvent(APIView):
     def put(self, request):
-        pass
-
-
-
-
-class deleteCalendarEvent(APIView):
-    def delete(self, request):
+        SCOPES = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/calendar.events"
+        ]
         try:
             userid = request.data.get('user_id')
             user = User.objects.get(pk=userid)
             eventid = request.data.get('event_id')
+            event = Event.objects.get(pk=eventid)
         except:
             resp = {
-                'error':"data with specified event_ID or user_ID not found",
+                'error':"data with specified user_ID not found",
                 'status':status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
         
-        service = build('calendar', 'v3', credentials='credentials.json')
         try:
-            service.events().delete(calendarId=user.calendarId, eventId=eventid).execute()
+            if user.token is None:  #for first event
+                path = os.path.join(os.getcwd(),"MapCalendar/credentials.json")
+                flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)         
+                creds = flow.run_local_server(approval_prompt='force', access_type='offline')
+                user.token = creds.to_json()
+                user.save()
+            else:
+                creds = Credentials.from_authorized_user_info(json.loads(user.token), SCOPES)
+                creds.refresh(Request())
+
+            service = build("calendar", "v3", credentials=creds)
+            
+            new_eventInfo = {
+                "summary": event.event_name,
+                "location": event.location,
+                "start": {
+                    "dateTime":event.event_date.isoformat(),
+                    "timeZone": 'Asia/Taipei',
+                },
+                "end": {
+                    "dateTime":  (event.event_date + datetime.timedelta(hours=1)).isoformat(),
+                    "timeZone": 'Asia/Taipei',
+                },
+                "description": event.detail
+            }
+
+            updated_event = service.events().update(calendarId=user.calendarId, body=new_eventInfo).execute()
+            Participant.objects.filter(event_id=eventid, user_id=userid).update(calendarEventId=updated_event['id'])
 
             resp = {
+                'error':None,
+                'status':status.HTTP_201_CREATED
+            }
+            return JsonResponse(resp)
+        except:
+            resp = {
+                'error':"update failed",
+                'status':status.HTTP_409_CONFLICT
+            }
+            return JsonResponse(resp)
+
+
+
+
+
+
+class getCalendarId_token(APIView):
+    def get(self, request):
+        try:
+            userid = request.GET.get('user_id')
+            user = User.objects.get(pk=userid)
+        except:
+            resp = {
+                'error':"data with specified user_ID not found",
+                'status':status.HTTP_404_NOT_FOUND
+            }
+            return JsonResponse(resp)
+        
+        try:
+            resp = {
+                'data':{
+                    'calendarId':user.calendarId,
+                    'token':user.token
+                },
                 'error':None,
                 'status':status.HTTP_200_OK
             }
             return JsonResponse(resp)
         except:
             resp = {
-                'error':"event deletion failed",
-                'status':status.HTTP_404_NOT_FOUND
+                'data':None,
+                'error':"getCalendatId failed",
+                'status':status.HTTP_400_BAD_REQUEST
             }
             return JsonResponse(resp)
