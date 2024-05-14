@@ -263,31 +263,38 @@ class createCalendar(APIView):
 
         if user.calendarId!=None or user.token!=None:
             resp = {
-                'error':"Already created Calendar "
+                'error':"Already created Calendar ",
+                'status':status.HTTP_400_BAD_REQUEST
             }
             return JsonResponse(resp)
 
-        #path = os.path.join(os.getcwd(),"MapCalendar/credentials.json")
-        path = ".credentials.json"
-        flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
-        creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #after extent SCOPES
-        user.token = creds.to_json()
-        user.save()
+        try:
+            path = "MapCalendar/credentials.json"
+            flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
+            creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #after extent SCOPES
+            user.token = creds.to_json()
+            user.save()
 
 
-        service = build("calendar", "v3", credentials=creds)
-        
-        calendar = {
-            'summary': 'ShopingoEvents',  #日曆名稱
-            'timeZone': 'Asia/Taipei' 
-        }
-        new_calendar = service.calendars().insert(body=calendar).execute()
-        user.calendarId = new_calendar['id']
-        user.save()
-        resp = {
-            'status':status.HTTP_200_OK
-        }
-        return JsonResponse(resp)
+            service = build("calendar", "v3", credentials=creds)
+            
+            calendar = {
+                'summary': 'ShopingoEvents',  #日曆名稱
+                'timeZone': 'Asia/Taipei' 
+            }
+            new_calendar = service.calendars().insert(body=calendar).execute()
+            user.calendarId = new_calendar['id']
+            user.save()
+            resp = {
+                'status':status.HTTP_200_OK
+            }
+            return JsonResponse(resp)
+        except:
+            resp = {
+                'error':"google api failed",
+                'status':status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp)
 
 
 class deleteCalendar(APIView):
