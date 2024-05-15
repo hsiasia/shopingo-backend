@@ -9,14 +9,15 @@ from rest_framework import status
 import json
 import os
 import datetime
-from Django_framework.settings import GOOGLE_MAP_KEY
+
+from dotenv import load_dotenv
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
+from dotenv import load_dotenv
 
 
 #------------------------------------------
@@ -101,7 +102,9 @@ class GetDistance(APIView):
     def get(self, request):
         #googlemap client
         try:
-            gmaps = googlemaps.Client(key=GOOGLE_MAP_KEY)
+            load_dotenv()
+            key = os.getenv('GOOGLEMAP_API_KEY')
+            gmaps = googlemaps.Client(key=key)
         except:
             resp = {
                 'error':"failed use googlemaps.Client",
@@ -153,7 +156,8 @@ class GetDistance(APIView):
                 'status':status.HTTP_200_OK
             }
             return JsonResponse(res)
-        except:
+        except Exception as e:
+            print("error--> ",e)
             resp = {
                 'data':None,
                 'error': "gmaps calcuation error",
@@ -289,7 +293,8 @@ class createCalendar(APIView):
                 'status':status.HTTP_200_OK
             }
             return JsonResponse(resp)
-        except:
+        except Exception as e:
+            print("error: ",e)
             resp = {
                 'error':"google api failed",
                 'status':status.HTTP_400_BAD_REQUEST
@@ -497,7 +502,7 @@ class updateCalendarEvent(APIView):
                 creds.refresh(Request())
 
             service = build("calendar", "v3", credentials=creds)
-            
+
             new_eventInfo = {
                 "summary": event.event_name,
                 "location": event.location,
