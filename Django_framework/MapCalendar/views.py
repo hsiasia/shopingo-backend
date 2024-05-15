@@ -249,6 +249,8 @@ class GetDistance2(APIView):
 # 5. updateCalendarEvent
 # 6. getCalendarId_token
 
+
+#TODO: 
 class createCalendar(APIView):
     def post(self, request):
         SCOPES = [
@@ -275,13 +277,9 @@ class createCalendar(APIView):
         try:
             path = "MapCalendar/credentials.json"
             flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
-            #1. for local :
-            #creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #after extent SCOPES
-            #2. for cloud :
-            creds = flow.run_console()
+            creds = flow.run_local_server(approval_prompt='force', access_type='offline') #TODO:
             user.token = creds.to_json()
             user.save()
-
 
             service = build("calendar", "v3", credentials=creds)
             
