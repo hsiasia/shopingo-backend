@@ -99,7 +99,7 @@ class GetDistance(APIView):
         
         return total_minutes
 
-    def get(self, request):
+    def post(self, request):
         #googlemap client
         try:
             load_dotenv()
