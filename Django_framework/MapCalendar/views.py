@@ -275,7 +275,10 @@ class createCalendar(APIView):
         try:
             path = "MapCalendar/credentials.json"
             flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
-            creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #after extent SCOPES
+            #1. for local :
+            #creds = flow.run_local_server(approval_prompt='force', access_type='offline')  #after extent SCOPES
+            #2. for cloud :
+            creds = flow.run_console()
             user.token = creds.to_json()
             user.save()
 
