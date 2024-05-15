@@ -477,6 +477,7 @@ class updateCalendarEvent(APIView):
             user = User.objects.get(pk=userid)
             eventid = request.data.get('event_id')
             event = Event.objects.get(pk=eventid)
+            clendarEventId = Participant.objects.filter(event_id=eventid, user_id=userid).values_list('calendarEventId')[0][0]
         except:
             resp = {
                 'error':"data with specified user_ID not found",
@@ -486,7 +487,7 @@ class updateCalendarEvent(APIView):
         
         try:
             if user.token is None:  #for first event
-                path = os.path.join(os.getcwd(),"MapCalendar/credentials.json")
+                path = "MapCalendar/credentials.json"
                 flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)         
                 creds = flow.run_local_server(approval_prompt='force', access_type='offline')
                 user.token = creds.to_json()
@@ -511,7 +512,7 @@ class updateCalendarEvent(APIView):
                 "description": event.detail
             }
 
-            updated_event = service.events().update(calendarId=user.calendarId, body=new_eventInfo).execute()
+            updated_event = service.events().update(calendarId=user.calendarId, eventId=clendarEventId, body=new_eventInfo).execute()
             Participant.objects.filter(event_id=eventid, user_id=userid).update(calendarEventId=updated_event['id'])
 
             resp = {
