@@ -35,7 +35,7 @@ class GetUserByID(generics.ListAPIView):
         if user_id: 
             data = User.objects.filter(id=user_id).\
                 values(
-                    'id', 'name', 'gmail', 'profile_pic', 'score')
+                    'id', 'name', 'gmail', 'profile_pic', 'score','token','calendarId')
             resp = {
                 'data': list(data),
                 'error': None,
