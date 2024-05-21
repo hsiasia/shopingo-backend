@@ -253,21 +253,26 @@ class GetDistance2(APIView):
 #TODO: 
 class createCalendar(APIView):
     def post(self, request):
-        SCOPES = [
-            "https://www.googleapis.com/auth/calendar",
-            "https://www.googleapis.com/auth/calendar.events" #add
-        ]
+        # SCOPES = [
+        #     "https://www.googleapis.com/auth/calendar",
+        #     "https://www.googleapis.com/auth/calendar.events" #add
+        # ]
         try:
             userid = request.data.get('user_id')
             user = User.objects.get(id=userid)
+            calendarId = request.data.get('calendarId')
+            auth_token = request.data.get('token')
         except:
             resp = {
-                'error': "data with specified user_ID not found",
+                'error': "request data not found",
                 'status': status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
 
         if user.calendarId!=None or user.token!=None:
+            # user.calendarId=None
+            # user.token=None
+            # user.save()
             resp = {
                 'error':"Already created Calendar ",
                 'status':status.HTTP_400_BAD_REQUEST
@@ -275,20 +280,22 @@ class createCalendar(APIView):
             return JsonResponse(resp)
 
         try:
-            path = "MapCalendar/credentials.json"
-            flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
-            creds = flow.run_local_server(approval_prompt='force', access_type='offline') #TODO:
-            user.token = creds.to_json()
-            user.save()
+            # path = "MapCalendar/credentials.json"
+            # flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
+            # creds = flow.run_local_server(approval_prompt='force', access_type='offline') #TODO:
+            # user.token = creds.to_json()
+            # user.save()
+            # service = build("calendar", "v3", credentials=creds)
+            # calendar = {
+            #     'summary': 'ShopingoEvents',  #日曆名稱
+            #     'timeZone': 'Asia/Taipei' 
+            # }
+            # new_calendar = service.calendars().insert(body=calendar).execute()
 
-            service = build("calendar", "v3", credentials=creds)
-            
-            calendar = {
-                'summary': 'ShopingoEvents',  #日曆名稱
-                'timeZone': 'Asia/Taipei' 
-            }
-            new_calendar = service.calendars().insert(body=calendar).execute()
-            user.calendarId = new_calendar['id']
+
+            creds = Credentials(token=auth_token)
+            user.token = creds.to_json()
+            user.calendarId = calendarId
             user.save()
             resp = {
                 'status':status.HTTP_200_OK
