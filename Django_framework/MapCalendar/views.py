@@ -218,9 +218,9 @@ class createCalendar(APIView):
             return JsonResponse(resp)
 
         if user.calendarId!=None or user.token!=None:
-            user.calendarId=None
-            user.token=None
-            user.save()
+            # user.calendarId=None
+            # user.token=None
+            # user.save()
             resp = {
                 'error':"Already created Calendar ",
                 'status':status.HTTP_400_BAD_REQUEST
