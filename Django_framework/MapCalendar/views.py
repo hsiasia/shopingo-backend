@@ -9,6 +9,7 @@ from rest_framework import status
 import json
 import os
 import datetime
+import requests
 
 from dotenv import load_dotenv
 
@@ -16,7 +17,6 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
 from dotenv import load_dotenv
 
 
@@ -114,16 +114,24 @@ class GetDistance(APIView):
 
         try:
             orderList = []
-            json_data = json.loads(request.body)
-            events = json_data['data']
-            for eve in events:
-                eventid = eve['event_id']
-                event = Event.objects.get(pk=eventid)
+            #json_data = json.loads(request.body)
+            #events = json_data['data']
+
+            # #new
+            UserLocation = request.data.get('UserLocation')  #ex : {"latitude": 23.9937, "longitude": 121.6300}
+            print("UserLocation : ",UserLocation)
+            events = Event.objects.all()
+
+            for event in events:
+                eventid = event.id #TODO: --> eve.id
                 EventLocation = event.coordinate
 
-                lat = eve['latitude']
-                long = eve['longitude']
-                UserLocation = {"latitude":lat, "longitude":long}
+                #filter out expired events
+                now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                event_time = event.event_date.strftime("%Y-%m-%d %H:%M:%S")
+                if event_time<now:
+                    continue
+
 
                 walk_data = gmaps.directions(UserLocation, EventLocation,mode='walking')
                 w_dist = walk_data[0]['legs'][0]['distance']['text']
@@ -142,92 +150,34 @@ class GetDistance(APIView):
                         "d_dist": d_dist,
                         "d_time": d_time
                     }}
-                
-                orderList.append([eventid,data])
+
+                orderList.append({
+                    'id':eventid,
+                    'creator':event.creator_id,
+                    "event_name":event.event_name,
+                    "company_name":event.company_name,
+                    "hashtag":event.hashtag,
+                    "location":event.location,
+                    "event_date":event.event_date,
+                    "scale":event.scale,
+                    "budget":event.budget,
+                    "detail":event.detail,
+                    "create_datetime":event.create_datetime,
+                    "update_datetime":event.update_datetime,
+                    "delete_datetime":event.delete_datetime,
+                    "images":[],
+                    "coordinate":event.coordinate,
+                    "distanse":data
+                })
 
             #以drive time作為排序
-            resultList = sorted(orderList, key=lambda x:self.convert_to_minutes(x[1]["drive"]["d_time"]),reverse=False)
-            resultDict = {}
-            for item in resultList:
-                resultDict[item[0]]=item[1]
+            resultList = sorted(orderList, key=lambda x:self.convert_to_minutes(x['distanse']["drive"]["d_time"]),reverse=False)
             res = {
-                'data':resultDict,
+                'data':resultList,
                 'error':None,
                 'status':status.HTTP_200_OK
             }
             return JsonResponse(res)
-        except Exception as e:
-            print("error--> ",e)
-            resp = {
-                'data':None,
-                'error': "gmaps calcuation error",
-                'status':status.HTTP_404_NOT_FOUND
-            }
-            return JsonResponse(resp)
-
-
-'''
-#算user到某一個event的距離
-class GetDistance2(APIView):
-    def get(self, request):
-    
-        #googlemap client
-        gmaps = googlemaps.Client(key='AIzaSyBnEyRCRUhtHZCDvmMrGZn04PEjPjPlf2E')
-
-        #event
-        try:
-            eventid = request.GET.get('event_id')
-            event = Event.objects.get(pk=eventid)
-            EventLocation = event.coordinate
-        except:
-            resp = {
-                'data':None,
-                'error': "data with specified event_ID not found",
-                'status': status.HTTP_404_NOT_FOUND
-            }
-            return JsonResponse(resp)
-
-        #user
-        try:
-            lat = request.GET.get('latitude')
-            long = request.GET.get('longitude')
-            UserLocation = {"latitude":lat, "longitude":long}
-        except:
-            resp = {
-                'data':None,
-                'error': "user_location not found",
-                'status': status.HTTP_404_NOT_FOUND
-            }
-            return JsonResponse(resp)
-        
-
-            
-        #distance
-        #mode= ["driving", "walking", "bicycling", "transit"]
-        walk_data = gmaps.directions(UserLocation, EventLocation,mode='walking')
-        w_dist = walk_data[0]['legs'][0]['distance']['text']
-        w_time = walk_data[0]['legs'][0]['duration']['text']
-        
-        drive_data = gmaps.directions(UserLocation, EventLocation,mode='driving')
-        d_dist = drive_data[0]['legs'][0]['distance']['text']
-        d_time = drive_data[0]['legs'][0]['duration']['text']
-        
-        try:
-            data = {
-                "walk": {
-                    "w_dist": w_dist,
-                    "w_time": w_time
-                },
-                "drive": {
-                    "d_dist": d_dist,
-                    "d_time": d_time
-                }}
-            resp = {
-                'data':data,
-                'error':None,
-                'status':status.HTTP_200_OK, 
-            }
-            return JsonResponse(resp)
         except:
             resp = {
                 'data':None,
@@ -235,7 +185,6 @@ class GetDistance2(APIView):
                 'status':status.HTTP_404_NOT_FOUND
             }
             return JsonResponse(resp)
-'''
 
 
 
@@ -253,15 +202,14 @@ class GetDistance2(APIView):
 #TODO: 
 class createCalendar(APIView):
     def post(self, request):
-        # SCOPES = [
-        #     "https://www.googleapis.com/auth/calendar",
-        #     "https://www.googleapis.com/auth/calendar.events" #add
-        # ]
+        SCOPES = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/calendar.events" #add
+        ]
         try:
             userid = request.data.get('user_id')
             user = User.objects.get(id=userid)
-            calendarId = request.data.get('calendarId')
-            auth_token = request.data.get('token')
+            authorization_code = request.data.get('code')
         except:
             resp = {
                 'error': "request data not found",
@@ -270,9 +218,9 @@ class createCalendar(APIView):
             return JsonResponse(resp)
 
         if user.calendarId!=None or user.token!=None:
-            # user.calendarId=None
-            # user.token=None
-            # user.save()
+            user.calendarId=None
+            user.token=None
+            user.save()
             resp = {
                 'error':"Already created Calendar ",
                 'status':status.HTTP_400_BAD_REQUEST
@@ -280,22 +228,45 @@ class createCalendar(APIView):
             return JsonResponse(resp)
 
         try:
-            # path = "MapCalendar/credentials.json"
-            # flow = InstalledAppFlow.from_client_secrets_file(path,SCOPES)
-            # creds = flow.run_local_server(approval_prompt='force', access_type='offline') #TODO:
-            # user.token = creds.to_json()
-            # user.save()
-            # service = build("calendar", "v3", credentials=creds)
-            # calendar = {
-            #     'summary': 'ShopingoEvents',  #日曆名稱
-            #     'timeZone': 'Asia/Taipei' 
-            # }
-            # new_calendar = service.calendars().insert(body=calendar).execute()
 
+            client_id = "121623953765-rgle7pqkttsvkp64sp977pv5d234eo7b.apps.googleusercontent.com"
+            client_secret = "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"
+            #redirect_uri = ["https://shopingo.info", "http://localhost:8080/","https://developers.google.com/oauthplayground"]
+            redirect_uri = "https://shopingo.info"
 
-            creds = Credentials(token=auth_token)
-            user.token = creds.to_json()
-            user.calendarId = calendarId
+            token_url = 'https://oauth2.googleapis.com/token'
+            token_payload = {
+                'code': authorization_code,         
+                'client_id': client_id,             
+                'client_secret': client_secret,     
+                'redirect_uri': redirect_uri,       
+                'grant_type': 'authorization_code', 
+            }
+
+            #Only for first time!!!!
+            authorization = requests.post(token_url, data=token_payload).json()
+            print("access_token : ",authorization['access_token'])
+            print("refresh_token : ",authorization['refresh_token'])
+            
+            #TODO: here
+            creds = Credentials(
+                token=authorization['access_token'],
+                refresh_token=authorization['refresh_token'],
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id="121623953765-rgle7pqkttsvkp64sp977pv5d234eo7b.apps.googleusercontent.com",
+                client_secret="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",
+                scopes=["https://www.googleapis.com/auth/calendar","https://www.googleapis.com/auth/calendar.events"],
+            )
+
+            service = build("calendar", "v3", credentials=creds)
+            calendar = {
+                'summary': 'ShopingoEvents',  #日曆名稱
+                'timeZone': 'Asia/Taipei' 
+            }
+            new_calendar = service.calendars().insert(body=calendar).execute()
+
+            user.token = creds.to_json() #string  
+            user.calendarId = new_calendar['id']
             user.save()
             resp = {
                 'status':status.HTTP_200_OK
@@ -369,7 +340,7 @@ class createCalendarEvent(APIView):
             userid = request.data.get('user_id')
             user = User.objects.get(pk=userid)
             eventid = request.data.get('event_id')
-            event = Event.objects.get(pk=eventid)     
+            event = Event.objects.get(pk=eventid)
             
             #這裡可能不會執行到，因為前端不會讓用者重複join
             #如果calendarEventId欄位不為None則表示已經join了
@@ -379,8 +350,7 @@ class createCalendarEvent(APIView):
                     'status' : status.HTTP_409_CONFLICT
                 }
                 return JsonResponse(resp)
-        except Exception as e:
-            print("[error]\n",e)
+        except:
             resp = {
                 'error': "data with specified event_ID or user_ID not found",
                 'status':status.HTTP_404_NOT_FOUND
@@ -394,8 +364,14 @@ class createCalendarEvent(APIView):
             user.token = creds.to_json()
             user.save()
         else:
-            creds = Credentials.from_authorized_user_info(json.loads(user.token), SCOPES)
-            creds.refresh(Request())
+            try:
+                creds = Credentials.from_authorized_user_info(json.loads(user.token), SCOPES)
+                creds.refresh(Request())  #TODO: 
+            except:
+                resp = {
+                    'error':"failed"
+                }
+                return JsonResponse(resp)
 
         service = build("calendar", "v3", credentials=creds)
 
@@ -422,7 +398,8 @@ class createCalendarEvent(APIView):
                 'status':status.HTTP_201_CREATED
             }
             return JsonResponse(resp)
-        except:
+        except Exception as e:
+            print("-->",e)
             resp = {
                 'error':"create duplicate event (id)",
                 'status':status.HTTP_409_CONFLICT
