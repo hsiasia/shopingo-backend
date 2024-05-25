@@ -171,14 +171,15 @@ class GetDistance(APIView):
                 })
 
             #以drive time作為排序
-            resultList = sorted(orderList, key=lambda x:self.convert_to_minutes(x['distanse']["drive"]["d_time"]),reverse=False)
+            resultList = sorted(orderList, key=lambda x:self.convert_to_minutes(x['distance']["drive"]["d_time"]),reverse=False)
             res = {
                 'data':resultList,
                 'error':None,
                 'status':status.HTTP_200_OK
             }
             return JsonResponse(res)
-        except:
+        except Exception as e:
+            print("-->",e)
             resp = {
                 'data':None,
                 'error': "gmaps calcuation error",
