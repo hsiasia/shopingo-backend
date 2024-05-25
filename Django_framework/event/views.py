@@ -12,6 +12,7 @@ from .models import Participant,SavedEvent
 from .serializers import GetEventSerializer
 from .serializers import ParticipantSerializer
 from .serializers import SavedEventSerializer
+from .serializers import UpdateEventSerializer
 
 
 from drf_yasg import openapi
@@ -21,9 +22,15 @@ from django.http import JsonResponse
 from datetime import datetime, timedelta
 import pytz
 
-
+from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+def group_exists(channel_layer, group_name):
+    try:
+        groups = async_to_sync(channel_layer.group_channels)(group_name)
+        return bool(groups)
+    except KeyError:
+        return False
 
 class HandleGetAllAndCreateEvent(generics.CreateAPIView):
     queryset = Event.objects.all()
@@ -162,6 +169,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
 
         )
     )
+
     def put(self, request, *args, **kwargs):
         # Extract event_id from URL path
         event_id = request.query_params.get('event_id')
@@ -199,17 +207,24 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                 # Save the updated data
                 serializer.save(update_datetime=timezone.now())
 
-                """
+                involved_user_ids = data = Participant.objects.filter(event_id=event_id).\
+                values_list(
+                    'user',flat=True)
+                print("Involved_users",involved_user_ids)
                 channel_layer = get_channel_layer()
-                async_to_sync(channel_layer.group_send)(
-                    "event_updates",  # Channel name
-                    {
-                        "type": "event.updated",
-                        "message": "Event has been updated",
-                        "event_id": event_id
-                    }
-                )
-                """
+                message = {
+                    'type': 'event_notification',
+                    'event_id': event_id,
+                    'message': f'Event {event_id} has been updated.'
+                }
+                for user_id in involved_user_ids:
+                    #print(user_id)
+                    room_name = f'user_{user_id}'
+                    try:
+                        async_to_sync(channel_layer.group_send)(room_name, message)
+                    except:
+                        print(f"Room '{room_name}' does not exist.")
+                
 
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
