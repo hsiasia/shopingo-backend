@@ -213,16 +213,17 @@ class UpdateUserScore(generics.GenericAPIView):
 
             if user != event.creator:
                 return JsonResponse({'error': 'The scored user is not the creator of the event'}, status=status.HTTP_409_CONFLICT)
+            
             if not Participant.objects.filter(user=myuser, event=event).exists():
                 return JsonResponse({'error': 'Not a participant of the event'}, status=status.HTTP_409_CONFLICT)
             
-            if UserEventScore.objects.filter(user=myuser, event=event).exists():
+            if UserEventScore.objects.filter(user=myuser, event=event, target='user').exists():
                 return JsonResponse({'error': 'User has already updated score for this event'}, status=status.HTTP_409_CONFLICT)
     
             user.score = round((user.score * user.score_amounts + new_score) / (user.score_amounts + 1), 1)
             user.score_amounts += 1
             user.save()
-            UserEventScore.objects.create(user=myuser, event=event)
+            UserEventScore.objects.create(user=myuser, event=event, target = 'user')
             
             resp = {
                 'data': 'score updated',
