@@ -3,7 +3,9 @@ from django.urls import path
 from django.urls import re_path
 #from .consumers import EventUpdatesConsumer
 from event.views import  HandleGetAllAndCreateEvent, HandleCreateParticipant,HandleGetEventsByStatus, UpdateEventImage,HandleSavedEvent
-
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from event.consumers import EventUpdatesConsumer
 
 urlpatterns = [
     path('api/event/images',  UpdateEventImage.as_view(), name='UpdayeEventImage-api'),
@@ -12,8 +14,3 @@ urlpatterns = [
     path('api/eventInfo/', HandleCreateParticipant.as_view(), name='HandleCreateParticipant-api'),
     path('api/saveEvent/', HandleSavedEvent.as_view(), name='SavedEvent-api')
 ]
-"""
-websocket_urlpatterns = [
-    re_path(r'ws/event-updates/$', EventUpdatesConsumer.as_asgi()),
-]
-"""
