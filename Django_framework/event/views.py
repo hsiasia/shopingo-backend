@@ -411,9 +411,6 @@ class HandleCreateParticipant(generics.CreateAPIView):
 
         try:
             participant = Participant.objects.get(event=event_id, user=user_id)
-            #participant = Participant.objects.filter(event_id=event_id,user_id=user_id).\
-             #   values(
-             #       'event', 'user','score')
         except Participant.DoesNotExist:
             resp = {
                 'error': "Participant with specified event_id and user_id does not exist",
@@ -422,7 +419,14 @@ class HandleCreateParticipant(generics.CreateAPIView):
             return JsonResponse(resp, status=status.HTTP_404_NOT_FOUND)
 
         # Update score and save
-        participant.score = score
+        if participant.score == None:
+            participant.score = score
+        else:
+            resp = {
+                'error': "user already rated",
+                'status': status.HTTP_400_BAD_REQUEST,
+            }
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
         participant.save()
 
         # Serialize response data
