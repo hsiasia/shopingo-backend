@@ -555,3 +555,31 @@ class getCalendarId_token(APIView):
         
 
 
+class getCalendarEvents(APIView):
+    def get(self, request):
+        SCOPES = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/calendar.events"
+        ]
+        try:
+            userid = request.GET.get('user_id')
+            user = User.objects.get(pk=userid)
+            creds = Credentials.from_authorized_user_info(json.loads(user.token), SCOPES)
+            creds.refresh(Request())
+            service = build("calendar", "v3", credentials=creds)
+            events_result = service.events().list(calendarId=user.calendarId).execute()
+            events = events_result.get('items', [])
+
+            resp = {
+                'data':events,
+                'error':"none",
+                'status':status.HTTP_200_OK             
+            }
+            return JsonResponse(resp)
+        except:
+            resp = {
+                'data':None,
+                'error':"service failed",
+                'status':status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp)
