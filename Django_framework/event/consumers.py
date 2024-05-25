@@ -29,13 +29,6 @@ class EventUpdatesConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         print("Data received:", text_data_json)
         """
-        message = text_data_json.get('message')
-
-        if message == 'update_event':
-            event_id = text_data_json.get('event_id')
-            # Notify users involved in the event
-            await self.notify_users_involved(event_id)
-        """
     async def notify_users_involved(self,involved_user_ids, event_id):
         # Determine users involved in the event (replace this with your logic)
         involved_user_ids = ['user1', 'user2', 'user3']  # Example: Replace with actual logic
@@ -54,3 +47,4 @@ class EventUpdatesConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             'message': message
         }))
+        """
