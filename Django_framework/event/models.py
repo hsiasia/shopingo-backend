@@ -1,5 +1,6 @@
 from django.db import models
 from user.models import User  
+#from compositekey.db.models.fields.multiplekey import MultiFieldPK
 
 class Event(models.Model):
 
@@ -23,10 +24,14 @@ class Event(models.Model):
         return self.event_name
 
 class Participant(models.Model):
+    #id =models.ForeignKey(Event,primary_key on_delete=models.CASCADE, null=False)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
+    user = models.ForeignKey(User,on_delete=models.CASCADE, null=False)
     score = models.IntegerField(null=True)
     calendarEventId = models.CharField(max_length=100, null=True)
+    #db.MultiFieldPK("event","user")
+
+
 
 class SavedEvent(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=False)

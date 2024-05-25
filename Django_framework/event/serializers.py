@@ -30,6 +30,7 @@ class UpdateEventSerializer(serializers.ModelSerializer):
         if invalid_fields:
             raise serializers.ValidationError(f"Invalid fields: {', '.join(invalid_fields)}")
         return data
+        
 class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Participant
