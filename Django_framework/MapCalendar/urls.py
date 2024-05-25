@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import SaveEventLocation, GetEventLocation, GetDistance
-from .views import createCalendar,deleteCalendar, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, getCalendarId_token
+from .views import createCalendar,deleteCalendar, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, getCalendarId_token, getCalendarEvents
 
 
 urlpatterns = [
@@ -12,5 +12,6 @@ urlpatterns = [
     path("api/calendar/createCalendarEvent",createCalendarEvent.as_view(),name='createCalendarEvent'),
     path("api/calendar/updateCalendarEvent",updateCalendarEvent.as_view(),name='updateCalendarEvent'),
     path("api/calendar/deleteCalendarEvent",deleteCalendarEvent.as_view(),name='deleteCalendarEvent'),
-    path("api/calendar/getCalendarId_token",getCalendarId_token.as_view(),name='getCalendarId_token')
+    path("api/calendar/getCalendarId_token",getCalendarId_token.as_view(),name='getCalendarId_token'),
+    path("api/calendar/getCalendarEvents",getCalendarEvents.as_view(),name='getCalendarEvents')
 ]
