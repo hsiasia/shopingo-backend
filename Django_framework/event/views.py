@@ -292,10 +292,10 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             print("Difference in hours:", time_difference_hours)
             if time_difference_hours < 24:
                 raise PermissionDenied("Event cannot be deleted within 24 hours of its start time.")
-            """
+            
             # Delete the event
             event.delete()
-            """
+            
             return Response({'message': 'Event deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
         
         except Event.DoesNotExist:
@@ -360,7 +360,8 @@ class HandleCreateParticipant(generics.CreateAPIView):
             type=openapi.TYPE_OBJECT,
             properties={
                 'event_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                'user_id': openapi.Schema(type=openapi.TYPE_STRING)
+                'user_id': openapi.Schema(type=openapi.TYPE_STRING),
+                'score': openapi.Schema(type=openapi.TYPE_INTEGER),
                 # Add other properties of your Event model here
             },
             required=['event', 'user']  # Adjust as per your serializer requirements
@@ -383,7 +384,54 @@ class HandleCreateParticipant(generics.CreateAPIView):
                 'errors': serializer.errors
             }
             return JsonResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
+    @swagger_auto_schema(
+    operation_summary='Update Participant Score',
+    operation_description='PUT http://34.81.121.53/:8000/api/eventInfo/',
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'event_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+            'user_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+            'score': openapi.Schema(type=openapi.TYPE_INTEGER),
+        },
+        required=['event_id', 'user_id', 'score']
+        )
+    )
+    def put(self, request, *args, **kwargs):
+        event_id = request.data.get('event_id')
+        user_id = request.data.get('user_id')
+        score = request.data.get('score')
 
+        if event_id is None or user_id is None or score is None:
+            resp = {
+                'error': "Missing event_id, user_id, or score in request body",
+                'status': status.HTTP_400_BAD_REQUEST,
+            }
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            participant = Participant.objects.get(event=event_id, user=user_id)
+            #participant = Participant.objects.filter(event_id=event_id,user_id=user_id).\
+             #   values(
+             #       'event', 'user','score')
+        except Participant.DoesNotExist:
+            resp = {
+                'error': "Participant with specified event_id and user_id does not exist",
+                'status': status.HTTP_404_NOT_FOUND,
+            }
+            return JsonResponse(resp, status=status.HTTP_404_NOT_FOUND)
+
+        # Update score and save
+        participant.score = score
+        participant.save()
+
+        # Serialize response data
+        serializer = ParticipantSerializer(participant)
+        resp = {
+            'data': serializer.data,
+            'status': status.HTTP_200_OK,
+        }
+        return JsonResponse(resp)
 
 class HandleSavedEvent(generics.CreateAPIView):
     queryset = SavedEvent.objects.all()
