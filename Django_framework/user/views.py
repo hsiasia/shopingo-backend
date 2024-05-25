@@ -188,7 +188,7 @@ class UpdateUserScore(generics.GenericAPIView):
             200: openapi.Response(description="Score updated successfully"),
             400: openapi.Response(description="Bad request due to missing user_id or score"),
             404: openapi.Response(description="User not found"),
-            409: openapi.Response(description="User already scored or my_user is not the participant of the event")
+            409: openapi.Response(description="User already scored or my_user is not the participant of the event, or  user_id is not the creator of the event")
         }
     )
     def post(self, request, *args, **kwargs):
@@ -211,6 +211,8 @@ class UpdateUserScore(generics.GenericAPIView):
             event = Event.objects.get(id=event_id)
             myuser = User.objects.get(id=my_user_id)
 
+            if user != event.creator:
+                return JsonResponse({'error': 'The scored user is not the creator of the event'}, status=status.HTTP_409_CONFLICT)
             if not Participant.objects.filter(user=myuser, event=event).exists():
                 return JsonResponse({'error': 'Not a participant of the event'}, status=status.HTTP_409_CONFLICT)
             
