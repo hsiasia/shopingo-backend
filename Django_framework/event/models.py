@@ -44,6 +44,8 @@ class Image(models.Model):
 class UserEventScore(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
-
+    target = models.CharField(max_length=5)
+    
     class Meta:
-        unique_together = ('user', 'event')  
+        unique_together = ('user', 'event','target')  
+
