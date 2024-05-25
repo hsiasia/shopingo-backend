@@ -374,38 +374,74 @@ class HandleSavedEvent(generics.CreateAPIView):
     queryset = SavedEvent.objects.all()
     serializer_class = SavedEventSerializer
     @swagger_auto_schema(
-        operation_summary='Get Saved Event',
-        operation_description="""
-        Get all saved event by user ID:http://34.81.121.53/:8000/api/saveEvent/?user_id=1""",
-
-        manual_parameters=[
-            openapi.Parameter(
-                name='user_id',
-                in_=openapi.IN_QUERY,
-                description='USER ID',
-                type=openapi.TYPE_STRING
-            )
-        ]
-    )
+            operation_summary='Get Saved Event',
+            operation_description="Get all saved events by user ID.",
+            manual_parameters=[
+                openapi.Parameter(
+                    name='user_id',
+                    in_=openapi.IN_QUERY,
+                    description='User ID to fetch saved events for',
+                    type=openapi.TYPE_STRING
+                )
+            ],
+            responses={
+                status.HTTP_200_OK: openapi.Response(
+                    description='A list of events',
+                    schema=openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'creator': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'event_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
+                                'hashtag': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
+                                'location': openapi.Schema(type=openapi.TYPE_STRING),
+                                'event_date': openapi.Schema(type=openapi.FORMAT_DATETIME),
+                                'scale': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'budget': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'detail': openapi.Schema(type=openapi.TYPE_STRING),
+                                'create_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
+                                'update_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
+                                'delete_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME, nullable=True),
+                                'images': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING))
+                            }
+                        )
+                    )
+                ),
+                status.HTTP_400_BAD_REQUEST: openapi.Response(
+                    description='Bad request due to missing user ID'
+                )
+            }
+        )
     def get(self, request, *args, **krgs):
-        user_id = request.query_params.get('user_id')
-        if user_id: 
-            data = SavedEvent.objects.filter(user_id=user_id).\
-                values(
-                    'event', 'user')
-            resp = {
-                'data': list(data),
-                'error': None,
-                'status': status.HTTP_200_OK, 
-            }
-            return JsonResponse(resp)
-        else: 
-            resp = {
-                'data': None,
-                'error': "No userId provided",
-                'status': status.HTTP_400_BAD_REQUEST, 
-            }
-            return JsonResponse(resp)
+            user_id = request.query_params.get('user_id')
+            if user_id:
+                saved_event_ids = SavedEvent.objects.filter(user_id=user_id).values_list('event_id', flat=True)
+                events = Event.objects.filter(id__in=saved_event_ids).values(
+                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime'
+                )
+
+                def add_images(event):
+                    images = Image.objects.filter(event_id=event['id']).values_list('url', flat=True)
+                    event['images'] = list(images)
+                    return event
+
+                events_with_images = [add_images(event) for event in events]
+                resp = {
+                    'data': events_with_images,
+                    'error': None if events_with_images else "No events found"
+                }
+                status_code = status.HTTP_200_OK if events_with_images else status.HTTP_404_NOT_FOUND
+                return JsonResponse(resp, status=status_code)
+            else:
+                resp = {
+                    'data': None,
+                    'error': "No userId provided",
+                    'status': status.HTTP_400_BAD_REQUEST, 
+                }
+                return JsonResponse(resp)
             
     @swagger_auto_schema(
         operation_summary='Create Save Event',
