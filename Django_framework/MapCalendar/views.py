@@ -167,7 +167,7 @@ class GetDistance(APIView):
                     "delete_datetime":event.delete_datetime,
                     "images":[],
                     "coordinate":event.coordinate,
-                    "distanse":data
+                    "distance":data
                 })
 
             #以drive time作為排序
@@ -535,11 +535,11 @@ class getCalendarId_token(APIView):
             return JsonResponse(resp)
         
         try:
+            empty=False
+            if user.calendarId is None:
+                empty=True
             resp = {
-                'data':{
-                    'calendarId':user.calendarId,
-                    'token':user.token
-                },
+                'empty':empty,
                 'error':None,
                 'status':status.HTTP_200_OK
             }
@@ -551,3 +551,6 @@ class getCalendarId_token(APIView):
                 'status':status.HTTP_400_BAD_REQUEST
             }
             return JsonResponse(resp)
+        
+
+
