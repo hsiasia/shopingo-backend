@@ -374,76 +374,6 @@ class HandleSavedEvent(generics.CreateAPIView):
     queryset = SavedEvent.objects.all()
     serializer_class = SavedEventSerializer
     @swagger_auto_schema(
-            operation_summary='Get Saved Event',
-            operation_description="Get all saved events by user ID.",
-            manual_parameters=[
-                openapi.Parameter(
-                    name='user_id',
-                    in_=openapi.IN_QUERY,
-                    description='User ID to fetch saved events for',
-                    type=openapi.TYPE_STRING
-                )
-            ],
-            responses={
-                status.HTTP_200_OK: openapi.Response(
-                    description='A list of events',
-                    schema=openapi.Schema(
-                        type=openapi.TYPE_ARRAY,
-                        items=openapi.Schema(
-                            type=openapi.TYPE_OBJECT,
-                            properties={
-                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                'creator': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                'event_name': openapi.Schema(type=openapi.TYPE_STRING),
-                                'company_name': openapi.Schema(type=openapi.TYPE_STRING),
-                                'hashtag': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)),
-                                'location': openapi.Schema(type=openapi.TYPE_STRING),
-                                'event_date': openapi.Schema(type=openapi.FORMAT_DATETIME),
-                                'scale': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                'budget': openapi.Schema(type=openapi.TYPE_INTEGER),
-                                'detail': openapi.Schema(type=openapi.TYPE_STRING),
-                                'create_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
-                                'update_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME),
-                                'delete_datetime': openapi.Schema(type=openapi.FORMAT_DATETIME, nullable=True),
-                                'images': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING))
-                            }
-                        )
-                    )
-                ),
-                status.HTTP_400_BAD_REQUEST: openapi.Response(
-                    description='Bad request due to missing user ID'
-                )
-            }
-        )
-    def get(self, request, *args, **krgs):
-            user_id = request.query_params.get('user_id')
-            if user_id:
-                saved_event_ids = SavedEvent.objects.filter(user_id=user_id).values_list('event_id', flat=True)
-                events = Event.objects.filter(id__in=saved_event_ids).values(
-                    'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime'
-                )
-
-                def add_images(event):
-                    images = Image.objects.filter(event_id=event['id']).values_list('url', flat=True)
-                    event['images'] = list(images)
-                    return event
-
-                events_with_images = [add_images(event) for event in events]
-                resp = {
-                    'data': events_with_images,
-                    'error': None if events_with_images else "No events found"
-                }
-                status_code = status.HTTP_200_OK if events_with_images else status.HTTP_404_NOT_FOUND
-                return JsonResponse(resp, status=status_code)
-            else:
-                resp = {
-                    'data': None,
-                    'error': "No userId provided",
-                    'status': status.HTTP_400_BAD_REQUEST, 
-                }
-                return JsonResponse(resp)
-            
-    @swagger_auto_schema(
         operation_summary='Create Save Event',
         operation_description='POST http://34.81.121.53/:8000/api/saveEvent/',
         request_body=openapi.Schema(
@@ -484,7 +414,7 @@ class HandleGetEventsByStatus(generics.GenericAPIView):
             openapi.Parameter(
                 'user_id', openapi.IN_QUERY, description='user id', type=openapi.TYPE_INTEGER),
             openapi.Parameter(
-                'status', openapi.IN_QUERY, description='must be "creator", "ongoing" or "expired" or "all"', type=openapi.TYPE_STRING)
+                'status', openapi.IN_QUERY, description='must be "creator", "ongoing" or "expired" or "all" or "saved"', type=openapi.TYPE_STRING)
         ]
     )
     def get(self, request, *args, **kwargs):
@@ -494,14 +424,18 @@ class HandleGetEventsByStatus(generics.GenericAPIView):
         if not user_id or not event_status:
             return JsonResponse({'error': 'missing status or user_id'},status=status.HTTP_400_BAD_REQUEST)
 
-        if event_status not in ['creator', 'ongoing', 'expired', 'all']:
-            return JsonResponse({'error': 'status must be creator , ongoing , expired or all'}, status=status.HTTP_400_BAD_REQUEST)
+        if event_status not in ['creator', 'ongoing', 'expired', 'all','saved']:
+            return JsonResponse({'error': 'status must be creator , ongoing , expired or all od saved'}, status=status.HTTP_400_BAD_REQUEST)
 
         now = timezone.now().replace(tzinfo=None)
 
         event_ids = Participant.objects.filter(user_id=user_id).values_list('event_id', flat=True)
 
-        if event_status == 'ongoing':
+        if event_status == 'saved':
+            saved_event_ids = SavedEvent.objects.filter(user_id=user_id).values_list('event_id', flat=True)
+            events = Event.objects.filter(id__in=saved_event_ids)
+
+        elif event_status == 'ongoing':
             events = Event.objects.filter(id__in=event_ids, event_date__gte=now)
 
         elif event_status == "expired":
