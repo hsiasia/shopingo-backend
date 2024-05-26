@@ -331,7 +331,7 @@ class deleteCalendar(APIView):
 
 
 class createCalendarEvent(APIView):
-    def put(self, request):
+    def post(self, request):
         SCOPES = [
             "https://www.googleapis.com/auth/calendar",
             "https://www.googleapis.com/auth/calendar.events"
