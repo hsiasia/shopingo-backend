@@ -233,7 +233,8 @@ class createCalendar(APIView):
             client_id = "121623953765-rgle7pqkttsvkp64sp977pv5d234eo7b.apps.googleusercontent.com"
             client_secret = "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"
             #redirect_uri = ["https://shopingo.info", "http://localhost:8080/","https://developers.google.com/oauthplayground"]
-            redirect_uri = "https://shopingo.info"
+            #redirect_uri = "https://shopingo.info"
+            redirect_uri = "postmessage"
 
             token_url = 'https://oauth2.googleapis.com/token'
             token_payload = {
@@ -246,8 +247,6 @@ class createCalendar(APIView):
 
             #Only for first time!!!!
             authorization = requests.post(token_url, data=token_payload).json()
-            print("access_token : ",authorization['access_token'])
-            print("refresh_token : ",authorization['refresh_token'])
             
             #TODO: here
             creds = Credentials(
