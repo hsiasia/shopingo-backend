@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from django.db.models import Avg, Count
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from event.models import Event, UserEventScore, Participant
@@ -27,28 +27,92 @@ class GetUserByID(generics.ListAPIView):
                 description='User ID',
                 type=openapi.TYPE_STRING
             )
-        ]
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'data': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID'),
+                                'name': openapi.Schema(type=openapi.TYPE_STRING, description='User Name'),
+                                'gmail': openapi.Schema(type=openapi.TYPE_STRING, description='User Gmail'),
+                                'profile_pic': openapi.Schema(type=openapi.TYPE_STRING, description='User Profile Picture'),
+                                'token': openapi.Schema(type=openapi.TYPE_STRING, description='User Token'),
+                                'calendarId': openapi.Schema(type=openapi.TYPE_STRING, description='User Calendar ID'),
+                                'score': openapi.Schema(type=openapi.TYPE_NUMBER, description='Average Score'),
+                                'score_amount': openapi.Schema(type=openapi.TYPE_INTEGER, description='Score Amount'),
+                            }
+                        ),
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description='Error Message'),
+                        'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='Status Code'),
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Bad Request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'data': openapi.Schema(type=openapi.TYPE_STRING, description='Data'),
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description='Error Message'),
+                        'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='Status Code'),
+                    }
+                )
+            ),
+            404: openapi.Response(
+                description="Not Found",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'data': openapi.Schema(type=openapi.TYPE_STRING, description='Data'),
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description='Error Message'),
+                        'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='Status Code'),
+                    }
+                )
+            )
+        }
     )
-
-    def get(self, request, *args, **krgs):
+    def get(self, request, *args, **kwargs):
         user_id = request.query_params.get('user_id')
         if user_id: 
-            data = User.objects.filter(id=user_id).\
-                values(
-                    'id', 'name', 'gmail', 'profile_pic', 'score','token','calendarId')
-            resp = {
-                'data': list(data),
-                'error': None,
-                'status': status.HTTP_200_OK, 
-            }
-            return JsonResponse(resp,status=status.HTTP_200_OK)
+            user_data = User.objects.filter(id=user_id).values(
+                'id', 'name', 'gmail', 'profile_pic', 'token', 'calendarId'
+            ).first()
+            
+            if user_data:
+                events_created_by_user = Event.objects.filter(creator_id=user_id)
+                participant_scores = Participant.objects.filter(event__in=events_created_by_user, score__isnull=False).values('score')
+
+                average_score = participant_scores.aggregate(avg_score=Avg('score'))['avg_score']
+                score_amount = participant_scores.count()
+
+                user_data['score'] = average_score if average_score else 5
+                user_data['score_amount'] = score_amount
+
+                resp = {
+                    'data': user_data,
+                    'error': None,
+                    'status': status.HTTP_200_OK, 
+                }
+            else:
+                resp = {
+                    'data': None,
+                    'error': "User not found",
+                    'status': status.HTTP_404_NOT_FOUND,
+                }
+            
+            return JsonResponse(resp, status=status.HTTP_200_OK)
         else: 
             resp = {
                 'data': None,
                 'error': "No userId provided",
                 'status': status.HTTP_400_BAD_REQUEST, 
             }
-            return JsonResponse(resp,status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
 
 class CreateUserAccount(generics.GenericAPIView):
     serializer_class = UserSerializer
@@ -236,3 +300,103 @@ class UpdateUserScore(generics.GenericAPIView):
             return JsonResponse({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         except Event.DoesNotExist:
             return JsonResponse({'error': 'Event not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class GetUserScoreData(generics.ListAPIView):
+    queryset = Participant.objects.all()
+    serializer_class = None  # 此视图不使用序列化类
+
+    @swagger_auto_schema(
+        operation_summary='Get Participant Data By User ID',
+        operation_description='Get Participant Data By User ID and Score Mode',
+        manual_parameters=[
+            openapi.Parameter(
+                name='user_id',
+                in_=openapi.IN_QUERY,
+                description='User ID',
+                type=openapi.TYPE_STRING
+            ),
+            openapi.Parameter(
+                name='mode',
+                in_=openapi.IN_QUERY,
+                description='Score Mode (null or notnull)',
+                type=openapi.TYPE_STRING
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful response",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'data': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'event_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Event ID'),
+                                    'score': openapi.Schema(type=openapi.TYPE_INTEGER, description='Score'),
+                                }
+                            )
+                        ),
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description='Error Message'),
+                        'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='Status Code'),
+                    }
+                )
+            ),
+            400: openapi.Response(
+                description="Bad Request",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'data': openapi.Schema(type=openapi.TYPE_STRING, description='Data'),
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description='Error Message'),
+                        'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='Status Code'),
+                    }
+                )
+            ),
+            404: openapi.Response(
+                description="Not Found",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'data': openapi.Schema(type=openapi.TYPE_STRING, description='Data'),
+                        'error': openapi.Schema(type=openapi.TYPE_STRING, description='Error Message'),
+                        'status': openapi.Schema(type=openapi.TYPE_INTEGER, description='Status Code'),
+                    }
+                )
+            )
+        }
+    )
+    def get(self, request, *args, **kwargs):
+        user_id = request.query_params.get('user_id')
+        mode = request.query_params.get('mode')
+
+        if not user_id:
+            resp = {
+                'data': None,
+                'error': "No userId provided",
+                'status': status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
+
+        if mode not in ['null', 'notnull']:
+            resp = {
+                'data': None,
+                'error': "Invalid mode provided, must be 'null' or 'notnull'",
+                'status': status.HTTP_400_BAD_REQUEST
+            }
+            return JsonResponse(resp, status=status.HTTP_400_BAD_REQUEST)
+
+        if mode == 'null':
+            participant_data = Participant.objects.filter(user_id=user_id, score__isnull=True).values('event_id', 'score')
+        else:
+            participant_data = Participant.objects.filter(user_id=user_id, score__isnull=False).values('event_id', 'score')
+
+        data = list(participant_data)
+        resp = {
+            'data': data,
+            'error': None,
+            'status': status.HTTP_200_OK
+        }
+        return JsonResponse(resp, status=status.HTTP_200_OK)
