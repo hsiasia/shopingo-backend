@@ -59,10 +59,13 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             images = Image.objects.filter(event_id=event['id']).values_list('url', flat=True)
             event['images'] = list(images)
             return event
-
+        current_time = timezone.now()
+        timezone_GMT8 = pytz.timezone('Asia/Shanghai')
+        current_time_GMT8 = current_time.astimezone(timezone_GMT8)
 
         if event_id: 
-            data = Event.objects.filter(id=event_id).\
+            
+            data = Event.objects.filter(id=event_id,event_date__gte=current_time_GMT8).\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             
@@ -75,7 +78,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             return JsonResponse(resp, status=status_code)
 
         elif user_id:
-            data = Event.objects.filter(creator=user_id).\
+            data = Event.objects.filter(creator=user_id,event_date__gte=current_time_GMT8).\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             
@@ -88,7 +91,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             return JsonResponse(resp, status=status_code)
         
         else:
-            data = Event.objects.\
+            data = Event.objects.filter(event_date__gte=current_time_GMT8).\
                 values(
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             
