@@ -516,8 +516,14 @@ class HandleGetEventsByStatus(generics.GenericAPIView):
 
         else:
             events = Event.objects.filter(id__in=event_ids)
+        
+        def add_images(event):
+            images = Image.objects.filter(event_id=event['id']).values_list('url', flat=True)
+            event['images'] = list(images)
+            return event
 
-        serialized_events = GetEventSerializer(events, many=True).data
+        serialized_events = [add_images(event) for event in GetEventSerializer(events, many=True).data]
+
 
         resp = {
                 'data': serialized_events,
