@@ -439,6 +439,38 @@ class HandleCreateParticipant(generics.CreateAPIView):
             'status': status.HTTP_200_OK,
         }
         return JsonResponse(resp)
+    
+    
+class HandleUnjoinEvent(generics.GenericAPIView):
+    queryset = Participant.objects.all()
+    serializer_class = ParticipantSerializer
+
+    @swagger_auto_schema(
+        operation_summary='Leave Event',
+        operation_description='POST http://34.81.121.53/:8000/api/leaveEvent/',
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'event_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                'user_id': openapi.Schema(type=openapi.TYPE_STRING),
+            },
+            required=['event_id', 'user_id']
+        )
+    )
+    def post(self, request, *args, **kwargs):
+        event_id = request.data.get('event_id')
+        user_id = request.data.get('user_id')
+
+        if not event_id or not user_id:
+            return JsonResponse({'error': 'Event ID and User ID must be provided.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            participant = Participant.objects.get(event_id=event_id, user_id=user_id)
+            participant.delete()
+            return JsonResponse({'message': 'Successfully left the event.'}, status=status.HTTP_204_NO_CONTENT)
+        except Participant.DoesNotExist:
+            return JsonResponse({'error': 'Participant not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
 
 class HandleSavedEvent(generics.CreateAPIView):
     queryset = SavedEvent.objects.all()
@@ -474,6 +506,28 @@ class HandleSavedEvent(generics.CreateAPIView):
             }
             return JsonResponse(response_data, status=status.HTTP_400_BAD_REQUEST)
 
+class HandleUnsavedEvent(generics.DestroyAPIView):
+    queryset = SavedEvent.objects.all()
+    serializer_class = SavedEventSerializer
+
+    @swagger_auto_schema(
+        operation_summary='Delete Saved Event',
+        operation_description='DELETE http://34.81.121.53/:8000/api/unsaveEvent/',
+        manual_parameters=[
+            openapi.Parameter('event_id', openapi.IN_QUERY, description="Event ID", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('user_id', openapi.IN_QUERY, description="User ID", type=openapi.TYPE_STRING)
+        ]
+    )
+    def post(self, request, *args, **kwargs):
+        event_id = request.data.get('event_id')
+        user_id = request.data.get('user_id')
+        try:
+            event = SavedEvent.objects.get(event_id=event_id, user_id=user_id)
+            event.delete()
+            return JsonResponse({'message': 'Event unsaved successfully'}, status=status.HTTP_204_NO_CONTENT)
+        except SavedEvent.DoesNotExist:
+            return JsonResponse({'error': 'Saved event not found'}, status=status.HTTP_404_NOT_FOUND)
+        
    
 class HandleGetEventsByStatus(generics.GenericAPIView):
     serializer_class = GetEventSerializer

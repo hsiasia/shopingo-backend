@@ -2,7 +2,7 @@ from django.urls import path
 
 from django.urls import re_path
 #from .consumers import EventUpdatesConsumer
-from event.views import  HandleGetAllAndCreateEvent, HandleCreateParticipant,HandleGetEventsByStatus, UpdateEventImage,HandleSavedEvent
+from event.views import  HandleGetAllAndCreateEvent, HandleCreateParticipant,HandleGetEventsByStatus, UpdateEventImage,HandleSavedEvent,HandleUnsavedEvent, HandleUnjoinEvent
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from event.consumers import EventUpdatesConsumer
@@ -12,5 +12,9 @@ urlpatterns = [
     path('api/event/',  HandleGetAllAndCreateEvent.as_view(), name='HandleEvent-api'),
     path('api/userEvent/',  HandleGetEventsByStatus.as_view(), name='HandleEventByStatus-api'),
     path('api/eventInfo/', HandleCreateParticipant.as_view(), name='HandleCreateParticipant-api'),
+    path('api/leaveEvent/', HandleUnjoinEvent.as_view(), name='leave2-event-api'),
+    path('api/unsaveEvent/', HandleUnsavedEvent.as_view(), name='unsavedEvent-api'),
     path('api/saveEvent/', HandleSavedEvent.as_view(), name='SavedEvent-api')
 ]
+
+
