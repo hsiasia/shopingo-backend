@@ -78,6 +78,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             
             events = [add_images(event) for event in data]
+            events = [add_participant_number(event) for event in events]
             resp = {
                 'data': events,
                 'error': None if events else "data with specified event_ID not found"
@@ -91,6 +92,7 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             
             events = [add_images(event) for event in data]
+            events = [add_participant_number(event) for event in events]
             resp = {
                 'data': events,
                 'error': None if events else "data with specified user_ID not found"
