@@ -59,6 +59,13 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
             images = Image.objects.filter(event_id=event['id']).values_list('url', flat=True)
             event['images'] = list(images)
             return event
+        def add_participant_number(event):
+            data = Participant.objects.filter(event_id=event['id']).\
+                values(
+                    'event', 'user','score')
+            count = data.count()
+            event['participant_count'] = count
+            return event
         current_time = timezone.now()
         timezone_GMT8 = pytz.timezone('Asia/Shanghai')
         current_time_GMT8 = current_time.astimezone(timezone_GMT8)
@@ -96,6 +103,8 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
                     'id', 'creator', 'event_name', 'company_name', 'hashtag', 'location', 'event_date', 'scale', 'budget', 'detail', 'create_datetime', 'update_datetime', 'delete_datetime')
             
             events = [add_images(event) for event in data]
+            events = [add_participant_number(event) for event in events]
+
             resp = {
                 'data': events,
                 'error': None if events else "No events found"
@@ -314,7 +323,7 @@ class HandleCreateParticipant(generics.CreateAPIView):
         operation_summary='Get Event Info',
         operation_description="""
         Get all event info: http://34.81.121.53/:8000/api/event
-        Get event info by event ID:http://34.81.121.53/:8000/api/event/?event_id=1""",
+        Get event info by event ID:http://34.81.121.53/:8000/api/eventInfo/?event_id=1""",
 
         manual_parameters=[
             openapi.Parameter(
