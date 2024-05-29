@@ -54,18 +54,21 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
     def get(self, request, *args, **kwargs):
         event_id = request.query_params.get('event_id')
         user_id = request.query_params.get('user_id')
+
         
         def add_images(event):
             images = Image.objects.filter(event_id=event['id']).values_list('url', flat=True)
             event['images'] = list(images)
             return event
         def add_participant_number(event):
-            data = Participant.objects.filter(event_id=event['id']).\
-                values(
-                    'user')
-            count = data.count()
-            event['participant_count'] = count
-            event['participants'] = list(data)
+            # Fetch only the user names for each participant associated with the event
+            user_names = Participant.objects.filter(event_id=event['id'])\
+                .select_related('user')\
+                .values_list('user__name', flat=True)
+            
+            # Set the participant_count and participants (names) to the event dictionary
+            event['participant_count'] = len(user_names)
+            event['participants'] = list(user_names)
             return event
         current_time = timezone.now()
         timezone_GMT8 = pytz.timezone('Asia/Shanghai')
