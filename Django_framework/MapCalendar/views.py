@@ -150,6 +150,17 @@ class GetDistance(APIView):
                         "d_dist": d_dist,
                         "d_time": d_time
                     }}
+                
+                creatorId = event.creator_id
+                # Participants = Participant.objects.filter(event_id=eventid)
+                # print("[Participants] : ",Participants)
+                # for p in Participants:
+                #     print("Participants : ",p['user_id'])
+                
+                user_names = Participant.objects.filter(event_id=eventid)\
+                .select_related('user')\
+                .values_list('user__name', flat=True)
+
 
                 orderList.append({
                     'id':eventid,
@@ -166,6 +177,8 @@ class GetDistance(APIView):
                     "update_datetime":event.update_datetime,
                     "delete_datetime":event.delete_datetime,
                     "images":[],
+                    "participant_count":len(user_names),
+                    "participants":list(user_names),
                     "coordinate":event.coordinate,
                     "distance":data
                 })
