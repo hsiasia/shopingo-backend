@@ -62,9 +62,10 @@ class HandleGetAllAndCreateEvent(generics.CreateAPIView):
         def add_participant_number(event):
             data = Participant.objects.filter(event_id=event['id']).\
                 values(
-                    'event', 'user','score')
+                    'user')
             count = data.count()
             event['participant_count'] = count
+            event['participants'] = list(data)
             return event
         current_time = timezone.now()
         timezone_GMT8 = pytz.timezone('Asia/Shanghai')
